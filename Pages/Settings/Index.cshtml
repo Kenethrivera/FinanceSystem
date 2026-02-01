@@ -1,0 +1,145 @@
+﻿@page
+@model FinanceSystem.Pages.Settings.IndexModel
+@{
+    ViewData["Title"] = "System Settings";
+}
+
+<div class="container mt-4" style="max-width: 1200px;">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0">System Settings</h2>
+            <p class="text-muted small mb-0">Manage your financial categories and wallets</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 border-bottom border-success border-opacity-25">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 45px; height: 45px;">
+                            <i class="bi bi-graph-up-arrow fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold text-dark">Income Labels</h6>
+                            <small class="text-muted" style="font-size: 0.75rem;">Tithes, Offering, Pledge</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="AddIncomeCategory" class="mb-3">
+                        <div class="input-group">
+                            <input type="text" name="name" class="form-control bg-light border-0" placeholder="New Label..." required />
+                            <button class="btn btn-success fw-bold shadow-sm">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="list-group list-group-flush">
+                        @foreach (var cat in Model.IncomeCategories)
+                        {
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-2 py-2 border-bottom-0 rounded mb-1 hover-bg-light">
+                                <span class="fw-bold text-secondary">@cat.Name</span>
+                                <form method="post" asp-page-handler="DeleteCategory" asp-route-id="@cat.Id" onsubmit="return confirm('Delete this category?');">
+                                    <button class="btn btn-sm btn-light text-danger border-0 hover-shadow" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 border-bottom border-danger border-opacity-25">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 45px; height: 45px;">
+                            <i class="bi bi-tags-fill fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold text-dark">Expense Labels</h6>
+                            <small class="text-muted" style="font-size: 0.75rem;">Food, Rent, Transpo</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="AddCategory" class="mb-3">
+                        <div class="input-group">
+                            <input type="text" name="name" class="form-control bg-light border-0" placeholder="New Category..." required />
+                            <button class="btn btn-danger fw-bold shadow-sm">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="list-group list-group-flush">
+                        @foreach (var cat in Model.ExpenseCategories)
+                        {
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-2 py-2 border-bottom-0 rounded mb-1 hover-bg-light">
+                                <span class="fw-bold text-secondary">@cat.Name</span>
+                                <form method="post" asp-page-handler="DeleteCategory" asp-route-id="@cat.Id" onsubmit="return confirm('Delete this category?');">
+                                    <button class="btn btn-sm btn-light text-danger border-0 hover-shadow" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 border-bottom border-primary border-opacity-25">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 45px; height: 45px;">
+                            <i class="bi bi-wallet2 fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold text-dark">Wallets / Sources</h6>
+                            <small class="text-muted" style="font-size: 0.75rem;">Cash, Bank, G-Cash</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="AddSource" class="mb-4">
+                        <div class="mb-2">
+                            <input type="text" name="name" class="form-control bg-light border-0" placeholder="Wallet Name (e.g. BDO)..." required />
+                        </div>
+                        <div class="input-group">
+                            <input type="text" name="description" class="form-control bg-light border-0" placeholder="Description (Optional)..." />
+                            <button class="btn btn-primary fw-bold shadow-sm">Add</button>
+                        </div>
+                    </form>
+
+                    <div class="list-group list-group-flush">
+                        @foreach (var src in Model.Sources)
+                        {
+                            <div class="list-group-item px-3 py-3 border-0 rounded mb-2 bg-light d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="fw-bold text-dark">@src.Name</div>
+                                    @if (!string.IsNullOrEmpty(src.Description))
+                                    {
+                                        <small class="text-muted d-block" style="line-height: 1.2;">@src.Description</small>
+                                    }
+                                </div>
+                                <form method="post" asp-page-handler="DeleteSource" asp-route-id="@src.Id" onsubmit="return confirm('Delete this wallet?');">
+                                    <button class="btn btn-sm btn-white text-danger border shadow-sm" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

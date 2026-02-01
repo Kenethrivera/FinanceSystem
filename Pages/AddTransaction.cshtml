@@ -1,0 +1,67 @@
+﻿@* @page *@
+@* @model FinanceSystem.Pages.AddTransactionModel *@
+@* @{ *@
+@*     ViewData["Title"] = "Add Transaction"; *@
+@* } *@
+
+@* <h2>Add Transaction</h2> *@
+
+@* <form method="post" class="transaction-form"> *@
+@*     <!-- Sunday --> *@
+@*     <div class="form-group"> *@
+@*         <label asp-for="NewTransaction.SundayId">Sunday: </label> *@
+@*         <select asp-for="NewTransaction.SundayId" class="form-control" *@
+@*                 asp-items="@(new SelectList(Model.Sundays.Select(s => new { s.Id, Display = s.SundayDate.ToString("yyyy-MM-dd") }), "Id", "Display"))"> *@
+@*             <option value="">-- Select Sunday --</option> *@
+@*         </select> *@
+@*         <span asp-validation-for="NewTransaction.SundayId" class="text-danger"></span> *@
+@*     </div> *@
+
+@*     <!-- Category --> *@
+@*     <div class="form-group"> *@
+@*         <label asp-for="NewTransaction.CategoryId">Category: </label> *@
+@*         <select asp-for="NewTransaction.CategoryId" class="form-control" *@
+@*                 asp-items="@(new SelectList(Model.Categories.Select(c => new { c.Id, Display = c.Name }), "Id", "Display"))"> *@
+@*             <option value="">-- Select Category -- </option> *@
+@*         </select> *@
+@*         <span asp-validation-for="NewTransaction.CategoryId" class="text-danger"></span> *@
+@*     </div> *@
+
+@*     <!-- Source --> *@
+@*     <div class="form-group"> *@
+@*         <label asp-for="NewTransaction.SourceId">Source: </label> *@
+@*         <select asp-for="NewTransaction.SourceId" class="form-control" *@
+@*                 asp-items="@(new SelectList(Model.Sources.Select(s => new { s.Id, Display = s.Name }), "Id", "Display"))"> *@
+@*             <option value="">-- Select Source -- </option> *@
+@*         </select> *@
+@*         <span asp-validation-for="NewTransaction.SourceId" class="text-danger"></span> *@
+@*     </div> *@
+
+@*     <!-- Date --> *@
+@*     <div class="form-group"> *@
+@*         <label asp-for="NewTransaction.Date">Date: </label> *@
+@*         <input asp-for="NewTransaction.Date" type="date" class="form-control" /> *@
+@*         <span asp-validation-for="NewTransaction.Date" class="text-danger"></span> *@
+@*     </div> *@
+
+@*     <!-- Amount --> *@
+@*     <div class="form-group"> *@
+@*         <label asp-for="NewTransaction.Amount">Amount: </label> *@
+@*         <input asp-for="NewTransaction.Amount" type="number" step="0.01" class="form-control" /> *@
+@*         <span asp-validation-for="NewTransaction.Amount" class="text-danger"></span> *@
+@*     </div> *@
+
+@*     <!-- Notes --> *@
+@*     <div class="form-group"> *@
+@*         <label asp-for="NewTransaction.Notes">Notes: </label> *@
+@*         <input asp-for="NewTransaction.Notes" type="text" class="form-control" /> *@
+@*         <span asp-validation-for="NewTransaction.Notes" class="text-danger"></span> *@
+@*     </div> *@
+
+@*     <!-- Submit Button --> *@
+@*     <button type="submit" class="btn btn-primary mt-3">Add Transaction</button> *@
+@* </form> *@
+
+@* @section Scripts { *@
+@*     <partial name="_ValidationScriptsPartial" /> *@
+@* } *@

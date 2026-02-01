@@ -1,0 +1,118 @@
+﻿@page
+@model FinanceSystem.Pages.Profile.IndexModel
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="container mt-4" style="max-width: 1000px;">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0">My Profile</h2>
+            <p class="text-muted small mb-0">Manage your account settings and security</p>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <div class="alert @(Model.IsSuccess ? "alert-success border-success" : "alert-danger border-danger") alert-dismissible fade show shadow-sm" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi @(Model.IsSuccess ? "bi-check-circle-fill" : "bi-exclamation-triangle-fill") me-2 fs-5"></i>
+                <div>@Model.Message</div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-4 shadow-sm"
+                     style="width: 80px; height: 80px; font-size: 2.5rem;">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold text-dark mb-1">@Model.FullName</h3>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill">
+                            <i class="bi bi-shield-lock me-1"></i> @Model.Role
+                        </span>
+                        <span class="text-muted small">
+                            <i class="bi bi-person-badge me-1"></i> @Model.Username
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 border-0">
+                    <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-person-lines-fill me-2"></i>Edit Profile</h6>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <form method="post" asp-page-handler="UpdateAccount">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">FULL NAME</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person"></i></span>
+                                <input type="text" asp-for="FullName" class="form-control border-start-0 ps-0" placeholder="e.g. Kenneth Rivera" required />
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">USERNAME</label>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-at"></i></span>
+                                <input type="text" asp-for="Username" class="form-control border-start-0 ps-0" required />
+                            </div>
+                            <div class="d-flex align-items-start text-warning small bg-warning bg-opacity-10 p-2 rounded">
+                                <i class="bi bi-exclamation-circle-fill me-2 mt-1"></i>
+                                <span>Note: Changing your username will sign you out immediately. You will need to log in again.</span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">
+                                <i class="bi bi-save me-2"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 border-0">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-shield-check me-2"></i>Security</h6>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <form method="post" asp-page-handler="ChangePassword">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">CURRENT PASSWORD</label>
+                            <input type="password" asp-for="CurrentPassword" class="form-control bg-light" required />
+                        </div>
+
+                        <hr class="my-4 text-muted opacity-25">
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">NEW PASSWORD</label>
+                            <input type="password" asp-for="NewPassword" class="form-control" required />
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">CONFIRM NEW PASSWORD</label>
+                            <input type="password" asp-for="ConfirmPassword" class="form-control" required />
+                        </div>
+
+                        <button type="submit" class="btn btn-outline-dark w-100 fw-bold">
+                            Update Password
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

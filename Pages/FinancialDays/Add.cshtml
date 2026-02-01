@@ -1,0 +1,186 @@
+﻿@page
+@model FinanceSystem.Pages.FinancialDays.AddModel
+@{
+    ViewData["Title"] = "New Financial Entry";
+}
+
+<div class="container mt-4" style="max-width: 1000px;">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0">New Entry</h2>
+            <p class="text-muted small mb-0">Create a new financial record</p>
+        </div>
+        <a asp-page="/Index" class="btn btn-outline-secondary border-0">
+            <i class="bi bi-x-lg"></i> Cancel
+        </a>
+    </div>
+
+    <form method="post">
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <h6 class="card-title fw-bold text-primary mb-3">
+                    <i class="bi bi-calendar-date me-2"></i>Day Information
+                </h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label text-muted small fw-bold">DATE</label>
+                        <input asp-for="Input.Day.Activity_Date" type="date" class="form-control form-control-lg bg-light border-0" />
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label text-muted small fw-bold">NOTES / EVENT NAME</label>
+                        <input asp-for="Input.Day.Notes" class="form-control form-control-lg bg-light border-0" placeholder="e.g. Special Event" />
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <div class="form-check form-switch mb-2 ms-1">
+                            <input asp-for="Input.Day.Is_Sunday" class="form-check-input" type="checkbox" id="isSundayCheck" style="cursor: pointer; width: 3em; height: 1.5em;">
+                            <label class="form-check-label fw-bold ms-2 pt-1" for="isSundayCheck">
+                                Sunday Service?
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-7">
+
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h6 class="card-title fw-bold text-success mb-3">
+                            <i class="bi bi-wallet2 me-2"></i>Money In (Income)
+                        </h6>
+                        <div class="bg-success bg-opacity-10 p-3 rounded-3">
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <label class="small text-muted fw-bold">SOURCE</label>
+                                    <select asp-for="Input.BudgetEntry.Source_Id" asp-items="Model.SourceOptions" class="form-select border-0 shadow-sm">
+                                        <option value="">-- Select Source --</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small text-muted fw-bold">AMOUNT</label>
+                                    <div class="input-group shadow-sm">
+                                        <span class="input-group-text border-0 bg-white text-success fw-bold">₱</span>
+                                        <input asp-for="Input.BudgetEntry.Amount" type="number" step="0.01" class="form-control border-0" placeholder="0.00" />
+                                    </div>
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <input asp-for="Input.BudgetEntry.Notes" class="form-control border-0 shadow-sm" placeholder="Add a note for this income..." />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="card-title fw-bold text-danger mb-0">
+                                <i class="bi bi-receipt me-2"></i>Money Out (Expenses)
+                            </h6>
+                            <small class="text-muted" style="font-size: 0.75rem;">Empty rows are ignored</small>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-borderless align-middle mb-0">
+                                <thead class="text-secondary small text-uppercase" style="font-size: 0.75rem; border-bottom: 1px solid #eee;">
+                                    <tr>
+                                        <th style="min-width: 140px;">Category</th>
+                                        <th style="min-width: 110px;">Amount</th>
+                                        <th style="min-width: 140px;">Paid From</th>
+                                        <th style="min-width: 150px;">Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < Model.Input.ExpensesList.Count; i++)
+                                    {
+                                        <tr style="border-bottom: 1px dashed #f0f0f0;">
+                                            <td class="ps-0">
+                                                <select name="Input.ExpensesList[@i].Category_Id" asp-items="Model.CategoryOptions" class="form-select form-select-sm bg-light border-0 text-dark fw-bold">
+                                                    <option value="">- Select -</option>
+                                                </select>
+                                            </td>
+
+                                            <td>
+                                                <div class="input-group input-group-sm">
+                                                    <input name="Input.ExpensesList[@i].Amount" type="number" step="0.01" class="form-control bg-light border-0" placeholder="0.00" />
+                                                </div>
+                                            </td>
+
+                                            <td>
+                                                <select name="Input.ExpensesList[@i].Source_Id" asp-items="Model.SourceOptions" class="form-select form-select-sm bg-light border-0 text-secondary">
+                                                    <option value="">- Wallet -</option>
+                                                </select>
+                                            </td>
+
+                                            <td class="pe-0">
+                                                <input name="Input.ExpensesList[@i].Notes" class="form-control form-control-sm bg-light border-0" placeholder="Details..." />
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h6 class="card-title fw-bold text-primary mb-3">
+                            <i class="bi bi-cash-coin me-2"></i>Offering Breakdown
+                        </h6>
+                        <div class="bg-light rounded-3 p-2">
+                            <table class="table table-borderless align-middle mb-0">
+                                <thead class="text-muted small text-center" style="border-bottom: 1px solid #ddd;">
+                                    <tr>
+                                        <th class="py-2">Denomination</th>
+                                        <th class="py-2">Quantity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < Model.Input.OfferingList.Count; i++)
+                                    {
+                                        <tr>
+                                            <td class="text-center">
+                                                <input type="hidden" name="Input.OfferingList[@i].Denomination" value="@Model.Input.OfferingList[i].Denomination" />
+                                                <input type="hidden" name="Input.OfferingList[@i].Notes" value="@Model.Input.OfferingList[i].Notes" />
+
+                                                <span class="badge bg-white text-dark border shadow-sm px-3 py-2" style="font-size: 0.9rem; min-width: 80px;">
+                                                    @Model.Input.OfferingList[i].Denomination
+                                                </span>
+                                                @if (!string.IsNullOrEmpty(Model.Input.OfferingList[i].Notes))
+                                                {
+                                                    <div class="text-muted" style="font-size: 0.65rem;">@Model.Input.OfferingList[i].Notes</div>
+                                                }
+                                            </td>
+                                            <td>
+                                                <input name="Input.OfferingList[@i].Quantity"
+                                                       value="@Model.Input.OfferingList[i].Quantity"
+                                                       type="number" min="0"
+                                                       class="form-control text-center fw-bold text-primary border-0 bg-white shadow-sm mx-auto"
+                                                       style="max-width: 100px;" />
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-grid gap-2 mb-5 pb-4">
+            <button type="submit" class="btn btn-primary py-3 fw-bold shadow-sm rounded-3">
+                <i class="bi bi-check-circle-fill me-2"></i> SAVE RECORD
+            </button>
+        </div>
+
+    </form>
+</div>
