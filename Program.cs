@@ -12,8 +12,13 @@ namespace FinanceSystem
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-            builder.Services.AddRazorPages();
+            builder.Services.AddRazorPages(options =>
+            {
+                options.Conventions.AuthorizeFolder("/");
+
+                options.Conventions.AllowAnonymousToPage("/Login");
+                options.Conventions.AllowAnonymousToPage("/Error");
+            });
             // Tells ASP.NET Core: “Here’s a service to share across the app, create it only once.”
             builder.Services.AddSingleton<SupabaseService>();
 
@@ -42,6 +47,14 @@ namespace FinanceSystem
             }
 
             app.UseHttpsRedirection();
+
+            app.Use(async (context, next) =>
+            {
+                context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
+                context.Response.Headers.Append("Pragma", "no-cache");
+                context.Response.Headers.Append("Expires", "0");
+                await next();
+            });
 
             app.UseRouting();
 
