@@ -10,6 +10,8 @@ namespace FinanceSystem.ViewModels
 
         public List<Expenses> ExpensesList { get; set; } = new List<Expenses>();
 
+        public List<MemberGiving> EnvelopeList { get; set; } = new();
+
         public List<Offering> OfferingList { get; set; } = new List<Offering>();
     }
 }

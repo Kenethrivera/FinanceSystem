@@ -1,6 +1,6 @@
 ﻿using Supabase;
 using Supabase.Postgrest;
-using Microsoft.Extensions.Configuration; // Ensure this is using correct namespace
+using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using System;
 
@@ -32,7 +32,6 @@ namespace FinanceSystem.Services
                 if (string.IsNullOrEmpty(key))
                 {
                     // Fail safe: If they asked for Admin access but no key is strictly defined,
-                    // do not fall back to Anon. Throw an error to alert the dev.
                     throw new Exception("CRITICAL: ServiceRoleKey requested but not found in configuration.");
                 }
             }
@@ -66,14 +65,11 @@ namespace FinanceSystem.Services
                     Timestamp = DateTime.Now
                 };
 
-                // Audit logs usually require permission to write, 
-                // ensure the current Client is initialized with enough permission 
-                // OR RLS policies allow authenticated users to INSERT into audit_logs.
+                // Audit logs usually require permission to write
                 await Client.From<FinanceSystem.Models.AuditLog>().Insert(log);
             }
             catch (Exception ex)
             {
-                // Consider logging this to a file or console so you know if auditing fails
                 Console.WriteLine($"[SECURITY WARNING] Audit Log Failed: {ex.Message}");
             }
         }

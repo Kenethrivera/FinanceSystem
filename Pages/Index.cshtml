@@ -38,26 +38,87 @@
                 <div class="bg-info text-dark rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
                     <i class="bi bi-piggy-bank fs-2"></i>
                 </div>
-                <div>
+                <div class="flex-grow-1">
                     <h6 class="text-muted text-uppercase fw-bold mb-1" style="font-size: 0.8rem;">Total Pledges (Allotted)</h6>
                     <h2 class="fw-bold text-dark mb-0">₱@Model.GrandTotal_Pledges.ToString("N2")</h2>
-                    <small class="text-muted">Reserved Funds</small>
+
+                    <div class="mt-2 bg-info bg-opacity-10 rounded p-2 border border-info border-opacity-25 d-flex justify-content-between align-items-center">
+                        <span class="small fw-bold text-dark text-uppercase" style="font-size: 0.75rem;">Solomon Fund:</span>
+                        <span class="fw-bold text-primary">
+                            ₱@(((decimal)ViewData["TotalSolomon"]).ToString("N2"))
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white py-3 border-0">
-        <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-bar-chart-fill me-2 text-primary"></i>Income vs Expenses</h5>
-            <small class="text-muted">Last 6 Months</small>
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-bar-chart-fill me-2 text-primary"></i>Income vs Expenses</h5>
+                <small class="text-muted">Last 6 Months</small>
+            </div>
+            <div class="card-body">
+                <div style="height: 300px; width: 100%;">
+                    <canvas id="financeChart"></canvas>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="card-body">
-        <div style="height: 300px; width: 100%;">
-            <canvas id="financeChart"></canvas>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100 bg-white">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark text-uppercase"><i class="bi bi-calendar-check me-2 text-danger"></i>Upcoming Payables</h6>
+
+                @if (User.IsInRole("Admin"))
+                {
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-sm btn-light text-secondary border rounded-circle" data-bs-toggle="modal" data-bs-target="#managePlansModal" title="Manage All">
+                            <i class="bi bi-list-ul"></i>
+                        </button>
+                        <button class="btn btn-sm btn-light text-primary border rounded-circle" data-bs-toggle="modal" data-bs-target="#addPlanModal" title="Add New">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                    </div>
+                }
+            </div>
+            <div class="card-body p-0">
+                @if (Model.UpcomingExpenses != null && Model.UpcomingExpenses.Any())
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var plan in Model.UpcomingExpenses)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center py-3 border-light">
+                                <div>
+                                    <div class="fw-bold text-dark">@plan.Title</div>
+                                    <div class="small text-muted">
+                                        @if (plan.IsRecurring)
+                                        {
+                                            <span class="badge bg-light text-secondary border me-1">Monthly</span>
+                                        }
+                                        <i class="bi bi-clock me-1"></i> Due: @plan.DueDate.ToString("MMM dd")
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold text-danger">₱@plan.Amount.ToString("N0")</div>
+                                    <small class="text-muted" style="font-size: 0.7rem;">Est.</small>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-check-circle-fill fs-1 text-success opacity-50"></i>
+                        <p class="mt-2 small fw-bold">All bills paid for this month!</p>
+                    </div>
+                }
+            </div>
         </div>
     </div>
 </div>
@@ -77,14 +138,7 @@
                     <option value="">All Months</option>
                     @for (int i = 1; i <= 12; i++)
                     {
-                        if (Model.SearchMonth == i)
-                        {
-                            <option value="@i" selected>@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(i)</option>
-                        }
-                        else
-                        {
-                            <option value="@i">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(i)</option>
-                        }
+                        <option value="@i" selected="@(Model.SearchMonth == i)">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(i)</option>
                     }
                 </select>
             </div>
@@ -139,13 +193,9 @@
                             {
                                 var label = string.IsNullOrEmpty(item.Notes) ? "Activity" : item.Notes;
                                 if (label.Length > 20) { label = label.Substring(0, 18) + "..."; }
-
-                                <span class="badge bg-white text-dark border border-secondary rounded-pill px-3 py-2">
-                                    @label
-                                </span>
+                                <span class="badge bg-white text-dark border border-secondary rounded-pill px-3 py-2">@label</span>
                             }
                         </td>
-
                         <td class="text-end font-monospace">
                             @if (item.CashOnHandNet > 0)
                             {
@@ -160,7 +210,6 @@
                                 <span class="text-muted">-</span>
                             }
                         </td>
-
                         <td class="text-end font-monospace">
                             @if (item.PledgeAmount > 0)
                             {
@@ -175,10 +224,7 @@
                                 <span class="text-muted">-</span>
                             }
                         </td>
-
-                        <td class="text-muted small text-truncate" style="max-width: 150px;">
-                            @item.Notes
-                        </td>
+                        <td class="text-muted small text-truncate" style="max-width: 150px;">@item.Notes</td>
                         <td class="text-end pe-3">
                             <a asp-page="/FinancialDays/Details" asp-route-id="@item.Id" class="btn btn-sm btn-light text-primary fw-bold border">
                                 View <i class="bi bi-chevron-right small"></i>
@@ -191,9 +237,190 @@
     </div>
 </div>
 
+@if (User.IsInRole("Admin"))
+{
+    <div class="modal fade" id="addPlanModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Add Payable</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" asp-page-handler="AddPlan">
+                        <div class="mb-2">
+                            <label class="small fw-bold text-muted">Description</label>
+                            <input asp-for="NewPlan.Title" class="form-control" placeholder="e.g. Rent, Internet" required />
+                        </div>
+                        <div class="mb-2">
+                            <label class="small fw-bold text-muted">Est. Amount</label>
+                            <input asp-for="NewPlan.Amount" type="number" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted">Type</label>
+                            <select id="planType" class="form-select mb-2" onchange="togglePlanInputs('add')" asp-for="NewPlan.IsMonthly">
+                                <option value="true">Monthly (Fixed)</option>
+                                <option value="false">One-Time (Seasonal)</option>
+                            </select>
+                            <div id="monthlyInput_add">
+                                <input asp-for="NewPlan.DueDay" type="number" min="1" max="31" class="form-control" placeholder="Day of Month (e.g. 15)" />
+                            </div>
+                            <div id="oneTimeInput_add" style="display:none;">
+                                <input asp-for="NewPlan.TargetDate" type="date" class="form-control" />
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 fw-bold">Save Plan</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="managePlansModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold">Manage Recurring Expenses</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted small">
+                                <tr>
+                                    <th class="ps-4">Title</th>
+                                    <th>Amount</th>
+                                    <th>Type</th>
+                                    <th>Schedule</th>
+                                    <th class="text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.AllPlans)
+                                {
+                                    <tr>
+                                        <td class="ps-4 fw-bold">@item.Title</td>
+                                        <td>₱@item.Amount.ToString("N0")</td>
+                                        <td>
+                                            @if (item.IsMonthly)
+                                            {
+                                                <span class="badge bg-primary text-white">Monthly</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary text-white">One-Time</span>
+                                            }
+                                        </td>
+                                        <td class="small text-muted">
+                                            @if (item.IsMonthly)
+                                            {
+                                                <span>Day @item.DueDay</span>
+                                            }
+                                            else
+                                            {
+                                                <span>@item.TargetDate?.ToString("MMM dd, yyyy")</span>
+                                            }
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <button class="btn btn-sm btn-light text-primary border me-1"
+                                                    onclick="openEditModal(@item.Id, '@item.Title', @item.Amount, '@item.IsMonthly.ToString().ToLower()', '@item.DueDay', '@(item.TargetDate?.ToString("yyyy-MM-dd"))')">
+                                                <i class="bi bi-pencil-fill"></i>
+                                            </button>
+
+                                            <form method="post" asp-page-handler="DeletePlan" asp-route-id="@item.Id" class="d-inline" onsubmit="return confirm('Delete this rule?');">
+                                                <button type="submit" class="btn btn-sm btn-light text-danger border"><i class="bi bi-trash"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editPlanModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Edit Expense Rule</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" asp-page-handler="UpdatePlan">
+                        <input type="hidden" id="editId" asp-for="EditPlan.Id" />
+
+                        <div class="mb-2">
+                            <label class="small fw-bold text-muted">Description</label>
+                            <input id="editTitle" asp-for="EditPlan.Title" class="form-control" required />
+                        </div>
+                        <div class="mb-2">
+                            <label class="small fw-bold text-muted">Est. Amount</label>
+                            <input id="editAmount" asp-for="EditPlan.Amount" type="number" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted">Type</label>
+                            <select id="editType" class="form-select mb-2" onchange="togglePlanInputs('edit')" asp-for="EditPlan.IsMonthly">
+                                <option value="true">Monthly (Fixed)</option>
+                                <option value="false">One-Time (Seasonal)</option>
+                            </select>
+
+                            <div id="monthlyInput_edit">
+                                <input id="editDay" asp-for="EditPlan.DueDay" type="number" min="1" max="31" class="form-control" placeholder="Day of Month" />
+                            </div>
+                            <div id="oneTimeInput_edit" style="display:none;">
+                                <input id="editDate" asp-for="EditPlan.TargetDate" type="date" class="form-control" />
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 fw-bold">Update Plan</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Shared Toggle Function
+        function togglePlanInputs(mode) {
+            var typeSelect = document.getElementById(mode === 'add' ? "planType" : "editType");
+            var isMonthly = typeSelect.value === "true";
+
+            document.getElementById("monthlyInput_" + mode).style.display = isMonthly ? "block" : "none";
+            document.getElementById("oneTimeInput_" + mode).style.display = isMonthly ? "none" : "block";
+        }
+
+        // Open Edit Modal & Fill Data
+        function openEditModal(id, title, amount, isMonthly, day, date) {
+            // 1. Close List Modal
+            var manageModalEl = document.getElementById('managePlansModal');
+            var manageModal = bootstrap.Modal.getInstance(manageModalEl);
+            manageModal.hide();
+
+            // 2. Fill Fields
+            document.getElementById('editId').value = id;
+            document.getElementById('editTitle').value = title;
+            document.getElementById('editAmount').value = amount;
+
+            var typeSelect = document.getElementById('editType');
+            typeSelect.value = isMonthly;
+
+            document.getElementById('editDay').value = day;
+            document.getElementById('editDate').value = date;
+
+            // 3. Set Correct Visibility
+            togglePlanInputs('edit');
+
+            // 4. Open Edit Modal
+            var editModal = new bootstrap.Modal(document.getElementById('editPlanModal'));
+            editModal.show();
+        }
+    </script>
+}
+
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <script>
         const ctx = document.getElementById('financeChart').getContext('2d');
         const labels = @Json.Serialize(Model.ChartLabels);
@@ -205,37 +432,17 @@
             data: {
                 labels: labels,
                 datasets: [
-                    {
-                        label: 'Income',
-                        data: incomeData,
-                        backgroundColor: '#0d6efd', // Solid Brand Blue
-                        borderRadius: 4
-                    },
-                    {
-                        label: 'Expense',
-                        data: expenseData,
-                        backgroundColor: '#dc3545', // Danger Red
-                        borderRadius: 4
-                    }
+                    { label: 'Income', data: incomeData, backgroundColor: '#0d6efd', borderRadius: 4 },
+                    { label: 'Expense', data: expenseData, backgroundColor: '#dc3545', borderRadius: 4 }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'top', align: 'end' }
-                },
+                plugins: { legend: { position: 'top', align: 'end' } },
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { borderDash: [2, 2], drawBorder: false },
-                        ticks: {
-                            callback: function(value) { return '₱' + value.toLocaleString(); }
-                        }
-                    },
-                    x: {
-                        grid: { display: false }
-                    }
+                    y: { beginAtZero: true, grid: { borderDash: [2, 2], drawBorder: false }, ticks: { callback: function(value) { return '₱' + value.toLocaleString(); } } },
+                    x: { grid: { display: false } }
                 }
             }
         });

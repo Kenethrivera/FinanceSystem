@@ -22,19 +22,30 @@ namespace FinanceSystem.ViewModels
 
     public class DailyReportItem
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public DateTime Date { get; set; }
-        public string Notes { get; set; } = string.Empty;
+        public string Notes { get; set; }
         public bool IsFlagged { get; set; }
+        public string FlagComment { get; set; }
+        public string FlagResponse { get; set; }
+
         public List<IncomeItem> IncomeList { get; set; } = new();
-        public decimal OfferingTotal { get; set; }
         public List<ExpenseItem> Expenses { get; set; } = new();
+
+        // New Breakdown Properties
+        public decimal TithesTotal { get; set; }
+        public decimal SolomonTotal { get; set; }
+        public decimal OfferingOnlyTotal { get; set; }
+
+        // Physical Cash
+        public decimal OfferingTotal { get; set; }
         public List<OfferingBreakdownItem> OfferingBreakdown { get; set; } = new();
 
-        public decimal TotalIncomeForDay => IncomeList.Sum(i => i.Amount) + OfferingTotal;
+        // Only sum the IncomeList. Do NOT add OfferingTotal.
+        public decimal TotalIncomeForDay => IncomeList.Sum(i => i.Amount);
+
         public decimal TotalExpenseForDay => Expenses.Sum(e => e.Amount);
         public decimal NetChange => TotalIncomeForDay - TotalExpenseForDay;
-
     }
 
     public class ExpenseItem

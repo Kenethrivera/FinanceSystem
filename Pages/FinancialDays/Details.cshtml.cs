@@ -18,6 +18,10 @@ namespace FinanceSystem.Pages.FinancialDays
         public List<Budget> Budgets { get; set; } = new();
         public List<Expenses> Expenses { get; set; } = new();
         public List<Offering> Offerings { get; set; } = new();
+
+        // NEW: Added Envelopes List
+        public List<MemberGiving> Envelopes { get; set; } = new();
+
         public List<Source> Sources { get; set; } = new();
         public List<Category> Categories { get; set; } = new();
 
@@ -32,6 +36,7 @@ namespace FinanceSystem.Pages.FinancialDays
         {
             await _supabase.InitializeAsync(true);
 
+            // 1. Get Day
             var response = await _supabase.Client
                 .From<Financial_Day>()
                 .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id)
@@ -40,29 +45,26 @@ namespace FinanceSystem.Pages.FinancialDays
             if (response == null) return NotFound();
             Day = response;
 
+            // 2. Get Related Data
             Budgets = (await _supabase.Client.From<Budget>().Filter("financial_day_id", Supabase.Postgrest.Constants.Operator.Equals, id).Get()).Models;
             Expenses = (await _supabase.Client.From<Expenses>().Filter("financial_day_id", Supabase.Postgrest.Constants.Operator.Equals, id).Get()).Models;
             Offerings = (await _supabase.Client.From<Offering>().Filter("financial_day_id", Supabase.Postgrest.Constants.Operator.Equals, id).Get()).Models;
 
+            // NEW: Fetch Member Envelopes
+            Envelopes = (await _supabase.Client.From<MemberGiving>().Filter("financial_day_id", Supabase.Postgrest.Constants.Operator.Equals, id).Get()).Models;
+
+            // 3. Get Lookups
             Sources = (await _supabase.Client.From<Source>().Get()).Models;
             Categories = (await _supabase.Client.From<Category>().Get()).Models;
 
+            // 4. Mother Church Logic
             var motherChurchWallet = Sources.FirstOrDefault(s => s.Name.Contains("Mother Church"));
 
             if (motherChurchWallet != null)
             {
-                // Did we receive money FROM Mother Church?
-                var incomeFromMC = Budgets.Where(b => b.Source_Id == motherChurchWallet.Id).ToList(); // Note: Budget Source_Id is Destination, verify logic based on your usage
-                                                                                                      // Actually, usually Budgets are "Category" -> "Wallet".
-                                                                                                      // If "Mother Church" is a Wallet, we check if money went INTO it, or if you have a "Mother Church Support" CATEGORY.
-                                                                                                      // Let's assume you track it by WALLET used for Expenses.
-
-                // Let's look at EXPENSES paid BY Mother Church Wallet
                 MotherChurchExpenseList = Expenses.Where(e => e.Source_Id == motherChurchWallet.Id).ToList();
                 MotherChurchExpenses = MotherChurchExpenseList.Sum(e => e.Amount);
 
-                // Calculate "Budget" given (Income)
-                // This depends on how you record it. If you put "Mother Church Support" into "Mother Church Wallet":
                 MotherChurchIncome = Budgets
                     .Where(b => b.Source_Id == motherChurchWallet.Id)
                     .Sum(b => b.Amount);
@@ -74,7 +76,7 @@ namespace FinanceSystem.Pages.FinancialDays
                 }
             }
 
-            // 2. Load Existing Liquidation Report (Image)
+            // 5. Load Liquidation Image
             var reports = await _supabase.Client.From<LiquidationReport>()
                 .Filter("financial_day_id", Supabase.Postgrest.Constants.Operator.Equals, id)
                 .Get();
@@ -89,7 +91,6 @@ namespace FinanceSystem.Pages.FinancialDays
 
             await _supabase.InitializeAsync(true);
 
-            // 1. Upload to Supabase Storage
             using var memoryStream = new MemoryStream();
             await uploadFile.CopyToAsync(memoryStream);
             var bytes = memoryStream.ToArray();
@@ -99,7 +100,6 @@ namespace FinanceSystem.Pages.FinancialDays
                 .From("liquidation-proofs")
                 .Upload(bytes, fileName);
 
-            // 2. Save Link to Database
             var report = new LiquidationReport
             {
                 Financial_Day_Id = id,
@@ -125,9 +125,13 @@ namespace FinanceSystem.Pages.FinancialDays
             {
                 logDetails = $"Deleted Entry for {dayToDelete.Activity_Date:MMM dd, yyyy}";
             }
+
+            // Delete all related records
             await _supabase.Client.From<Budget>().Filter("financial_day_id", Supabase.Postgrest.Constants.Operator.Equals, id).Delete();
             await _supabase.Client.From<Expenses>().Filter("financial_day_id", Supabase.Postgrest.Constants.Operator.Equals, id).Delete();
             await _supabase.Client.From<Offering>().Filter("financial_day_id", Supabase.Postgrest.Constants.Operator.Equals, id).Delete();
+            await _supabase.Client.From<MemberGiving>().Filter("financial_day_id", Supabase.Postgrest.Constants.Operator.Equals, id).Delete(); // NEW
+            await _supabase.Client.From<LiquidationReport>().Filter("financial_day_id", Supabase.Postgrest.Constants.Operator.Equals, id).Delete();
 
             await _supabase.Client.From<Financial_Day>().Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id).Delete();
             await _supabase.LogActvity(User.Identity.Name, "DELETE", logDetails);
@@ -139,12 +143,6 @@ namespace FinanceSystem.Pages.FinancialDays
         {
             await _supabase.InitializeAsync(true);
 
-            var oldData = (await _supabase.Client.From<Financial_Day>()
-                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id)
-                .Get()).Models.FirstOrDefault();
-
-
-
             var day = await _supabase.Client
                 .From<Financial_Day>()
                 .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id)
@@ -152,69 +150,48 @@ namespace FinanceSystem.Pages.FinancialDays
 
             if (day != null)
             {
-                string oldNotes = day.Notes;
                 day.Notes = newNotes;
-
                 day.Activity_Date = day.Activity_Date.Date.AddHours(12);
-
-                await _supabase.Client
-                    .From<Financial_Day>()
-                    .Update(day);
+                await _supabase.Client.From<Financial_Day>().Update(day);
 
                 string logDetail = $"Updated Notes for {day.Activity_Date:MMM dd}. Notes: '{newNotes}'";
                 await _supabase.LogActvity(User.Identity.Name, "UPDATE", logDetail);
             }
 
-            return RedirectToPage("/Index");
+            return RedirectToPage("/Index"); // Or back to Details
         }
 
-        // 1. AUDITOR: Sets the flag with a comment
         public async Task<IActionResult> OnPostFlagRecordAsync(int id, string comment)
         {
             await _supabase.InitializeAsync(true);
-
-            var day = await _supabase.Client
-                .From<Financial_Day>()
-                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id)
-                .Single();
+            var day = await _supabase.Client.From<Financial_Day>().Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id).Single();
 
             if (day != null)
             {
                 day.FlagComment = comment;
                 day.FlagResponse = null;
-
                 day.Activity_Date = day.Activity_Date.Date.AddHours(12);
-
                 await _supabase.Client.From<Financial_Day>().Update(day);
-                string logDetail = $"Flagged Entry {day.Activity_Date:MMM dd}. Issue: '{comment}'";
-                await _supabase.LogActvity(User.Identity.Name, "UPDATE", logDetail);
-            }
 
+                await _supabase.LogActvity(User.Identity.Name, "UPDATE", $"Flagged Entry {day.Activity_Date:MMM dd}. Issue: '{comment}'");
+            }
             return RedirectToPage(new { id = id });
         }
 
-        // 2. ADMIN: Clears the flag (Marks as Resolved)
         public async Task<IActionResult> OnPostResolveFlagAsync(int id, string adminResponse)
         {
             await _supabase.InitializeAsync(true);
-
-            var day = await _supabase.Client
-                .From<Financial_Day>()
-                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id)
-                .Single();
+            var day = await _supabase.Client.From<Financial_Day>().Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id).Single();
 
             if (day != null)
             {
                 day.FlagResponse = adminResponse;
                 day.Activity_Date = day.Activity_Date.Date.AddHours(12);
                 await _supabase.Client.From<Financial_Day>().Update(day);
-                string logDetail = $"Resolved Flag for {day.Activity_Date:MMM dd}. Fix: '{adminResponse}'";
-                await _supabase.LogActvity(User.Identity.Name, "UPDATE", logDetail);
-            }
 
+                await _supabase.LogActvity(User.Identity.Name, "UPDATE", $"Resolved Flag for {day.Activity_Date:MMM dd}. Fix: '{adminResponse}'");
+            }
             return RedirectToPage(new { id = id });
         }
-
-
     }
 }

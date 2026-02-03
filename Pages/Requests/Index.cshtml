@@ -1,0 +1,210 @@
+﻿@page
+@model FinanceSystem.Pages.Requests.IndexModel
+@{
+    ViewData["Title"] = "Fund Requests";
+}
+
+<div class="container-fluid mt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-0"><i class="bi bi-wallet2 me-2 text-primary"></i>Fund Request Hub</h3>
+            <p class="text-muted small mb-0">Submit and track your budget requests</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-primary text-white py-3">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-plus-circle me-2"></i>New Request</h6>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" asp-page-handler="Create">
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted">TITLE</label>
+                            <input asp-for="RequestInput.Title" class="form-control" placeholder="e.g. Fellowship Budget" required />
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="small fw-bold text-muted">AMOUNT</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0 fw-bold text-primary">₱</span>
+                                    <input asp-for="RequestInput.Amount" type="number" class="form-control border-start-0" placeholder="0.00" required />
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <label class="small fw-bold text-muted">NEEDED BY</label>
+                                <input asp-for="RequestInput.DateNeeded" type="date" class="form-control" required />
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="small fw-bold text-muted">BREAKDOWN / DETAILS</label>
+                            <textarea asp-for="RequestInput.Reason" class="form-control" rows="5" placeholder="e.g. Food: 500, Venue: 1000"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
+                            Submit Request
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 border-0">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-clock-history me-2"></i>My Request History</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted small text-uppercase">
+                                <tr>
+                                    <th class="ps-4" style="width: 30%;">Request</th>
+                                    <th style="width: 15%;">Amount</th>
+                                    <th style="width: 15%;">Status</th>
+                                    <th style="width: 25%;">Admin Note</th>
+                                    <th class="text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.MyRequests)
+                                {
+                                    <tr>
+                                        <td class="ps-4">
+                                            <div class="fw-bold text-dark">@item.Title</div>
+                                            <div class="small text-muted">
+                                                Needed: <span class="fw-bold text-dark">@item.DateNeeded?.ToString("MMM dd")</span>
+                                            </div>
+                                        </td>
+                                        <td class="fw-bold text-dark">₱@item.Amount.ToString("N0")</td>
+                                        <td>
+                                            @if (item.Status == "Approved")
+                                            {
+                                                <span class="badge bg-success bg-opacity-10 text-success border border-success">Approved</span>
+                                            }
+                                            else if (item.Status == "Rejected")
+                                            {
+                                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">Rejected</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning bg-opacity-10 text-dark border border-warning">Pending</span>
+                                            }
+                                        </td>
+
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(item.AdminComment))
+                                            {
+                                                <div class="text-muted small fst-italic border-start ps-2"
+                                                     style="max-width: 200px; max-height: 50px; overflow-y: auto;">
+                                                    @item.AdminComment
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small opacity-50">-</span>
+                                            }
+                                        </td>
+
+                                        <td class="text-end pe-4 text-nowrap">
+                                            @if (item.Status == "Pending")
+                                            {
+                                                <button class="btn btn-sm btn-light text-primary border me-1"
+                                                        title="Edit"
+                                                        onclick="openEditModal(@item.Id, '@item.Title', @item.Amount, '@(item.DateNeeded?.ToString("yyyy-MM-dd"))', `@item.Reason`)">
+                                                    <i class="bi bi-pencil-fill"></i>
+                                                </button>
+
+                                                <form method="post" asp-page-handler="Cancel" asp-route-id="@item.Id" class="d-inline" onsubmit="return confirm('Cancel this request?');">
+                                                    <button type="submit" class="btn btn-sm btn-light text-danger border" title="Cancel">
+                                                        <i class="bi bi-trash-fill"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small"><i class="bi bi-lock-fill"></i> Locked</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                                @if (!Model.MyRequests.Any())
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center py-5 text-muted">
+                                            No requests found. Create one to get started!
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editRequestModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Edit Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" asp-page-handler="Update">
+                    <input type="hidden" id="editId" asp-for="RequestInput.Id" />
+
+                    <div class="mb-3">
+                        <label class="small fw-bold text-muted">TITLE</label>
+                        <input id="editTitle" asp-for="RequestInput.Title" class="form-control" required />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="small fw-bold text-muted">AMOUNT</label>
+                            <input id="editAmount" asp-for="RequestInput.Amount" type="number" class="form-control" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="small fw-bold text-muted">NEEDED BY</label>
+                            <input id="editDate" asp-for="RequestInput.DateNeeded" type="date" class="form-control" required />
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="small fw-bold text-muted">BREAKDOWN</label>
+                        <textarea id="editReason" asp-for="RequestInput.Reason" class="form-control" rows="4"></textarea>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary fw-bold">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+
+    function openEditModal(id, title, amount, dateString, reason) {
+        document.getElementById('editId').value = id;
+        document.getElementById('editTitle').value = title;
+        document.getElementById('editAmount').value = amount;
+
+        // Date Fix: Directly assign the yyyy-MM-dd string.
+        // This avoids JS Date object conversion which causes timezone issues.
+        document.getElementById('editDate').value = dateString;
+
+        document.getElementById('editReason').value = reason;
+
+        new bootstrap.Modal(document.getElementById('editRequestModal')).show();
+    }
+</script>

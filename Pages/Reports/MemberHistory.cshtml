@@ -1,0 +1,168 @@
+﻿@page
+@model FinanceSystem.Pages.Reports.MemberHistoryModel
+@{
+    ViewData["Title"] = "Member Giving History";
+}
+
+<div class="container mt-4" style="max-width: 1100px;">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0"><i class="bi bi-people-fill me-2"></i>Member Giving History</h2>
+            <p class="text-muted small mb-0">Detailed breakdown of envelopes by date</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-3 bg-light rounded">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted">MONTH</label>
+                    <select name="Month" class="form-select border-0 shadow-sm" asp-for="Month">
+                        @for (int i = 1; i <= 12; i++)
+                        {
+                            <option value="@i">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(i)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">YEAR</label>
+                    <input name="Year" type="number" class="form-control border-0 shadow-sm" asp-for="Year" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted">TYPE</label>
+                    <select name="FilterType" class="form-select border-0 shadow-sm text-primary fw-bold" asp-for="FilterType">
+                        <option value="All">Show All Types</option>
+                        <option value="Tithes">Tithes Only</option>
+                        <option value="Offering">Offering Only</option>
+                        <option value="Solomon">Solomon Only</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary fw-bold w-100 shadow-sm">
+                        <i class="bi bi-filter me-1"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (!Model.GroupedHistory.Any())
+    {
+        <div class="alert alert-light text-center border py-5">
+            <h5 class="text-muted">No records found for @System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(Model.Month.Value) @Model.Year.</h5>
+        </div>
+    }
+
+    @foreach (var group in Model.GroupedHistory)
+    {
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="fw-bold text-dark mb-0">
+                        @group.Date.ToString("MMMM dd, yyyy")
+                        <span class="badge bg-light text-dark border ms-2">@group.Date.DayOfWeek</span>
+                    </h5>
+                    <small class="text-muted">@group.EventName</small>
+                </div>
+                <div class="text-end">
+                    <div class="text-muted small text-uppercase">Total Collected</div>
+                    <div class="fw-bold text-success fs-4">₱@group.TotalGroup.ToString("N0")</div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-secondary small text-uppercase">
+                        <tr>
+                            <th class="ps-4" style="width:30%;">Member Name</th>
+                            @if (Model.FilterType == "All" || Model.FilterType == "Tithes")
+                            {
+                                <th class="text-end text-muted">Tithes</th>
+                            }
+                            @if (Model.FilterType == "All" || Model.FilterType == "Offering")
+                            {
+                                <th class="text-end text-muted">Offering</th>
+                            }
+                            @if (Model.FilterType == "All" || Model.FilterType == "Solomon")
+                            {
+                                <th class="text-end text-primary fw-bold">Solomon</th>
+                            }
+                            <th class="text-end pe-4 table-active fw-bold text-dark">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in group.Givings)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-bold text-dark">@item.Member_Name</td>
+
+                                @if (Model.FilterType == "All" || Model.FilterType == "Tithes")
+                                {
+                                    <td class="text-end text-muted">
+                                        @if (item.Tithes_Amount > 0)
+                                        {
+                                            <span>₱@item.Tithes_Amount.ToString("N0")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-light">-</span>
+                                        }
+                                    </td>
+                                }
+
+                                @if (Model.FilterType == "All" || Model.FilterType == "Offering")
+                                {
+                                    <td class="text-end text-muted">
+                                        @if (item.Offering_Amount > 0)
+                                        {
+                                            <span>₱@item.Offering_Amount.ToString("N0")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-light">-</span>
+                                        }
+                                    </td>
+                                }
+
+                                @if (Model.FilterType == "All" || Model.FilterType == "Solomon")
+                                {
+                                    <td class="text-end text-primary fw-bold">
+                                        @if (item.Solomon_Amount > 0)
+                                        {
+                                            <span>₱@item.Solomon_Amount.ToString("N0")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-light">-</span>
+                                        }
+                                    </td>
+                                }
+
+                                <td class="text-end pe-4 fw-bold text-dark table-active fs-6">₱@item.Total_Amount.ToString("N0")</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="bg-primary bg-opacity-10 fw-bold border-top border-primary">
+                        <tr>
+                            <td class="ps-4 text-uppercase text-primary py-3">Subtotal</td>
+                            @if (Model.FilterType == "All" || Model.FilterType == "Tithes")
+                            {
+                                <td class="text-end py-3">₱@group.TotalTithes.ToString("N0")</td>
+                            }
+                            @if (Model.FilterType == "All" || Model.FilterType == "Offering")
+                            {
+                                <td class="text-end py-3">₱@group.TotalOfferings.ToString("N0")</td>
+                            }
+                            @if (Model.FilterType == "All" || Model.FilterType == "Solomon")
+                            {
+                                <td class="text-end text-primary py-3">₱@group.TotalSolomon.ToString("N0")</td>
+                            }
+                            <td class="text-end pe-4 py-3 text-dark fs-5">₱@group.TotalGroup.ToString("N0")</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    }
+</div>

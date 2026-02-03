@@ -4,40 +4,34 @@
     ViewData["Title"] = "New Financial Entry";
 }
 
-<div class="container mt-4" style="max-width: 1000px;">
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold text-dark mb-0">New Entry</h2>
-            <p class="text-muted small mb-0">Create a new financial record</p>
-        </div>
-        <a asp-page="/Index" class="btn btn-outline-secondary border-0">
-            <i class="bi bi-x-lg"></i> Cancel
-        </a>
-    </div>
+<div class="container mt-4" style="max-width: 1300px;">
 
     <form method="post">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-dark mb-0">New Entry</h2>
+                <p class="text-muted small mb-0">Create a new financial record</p>
+            </div>
+            <a asp-page="/Index" class="btn btn-outline-secondary border-0">
+                <i class="bi bi-x-lg"></i> Cancel
+            </a>
+        </div>
 
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body p-4">
-                <h6 class="card-title fw-bold text-primary mb-3">
-                    <i class="bi bi-calendar-date me-2"></i>Day Information
-                </h6>
-                <div class="row g-3">
-                    <div class="col-md-4">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-3">
                         <label class="form-label text-muted small fw-bold">DATE</label>
-                        <input asp-for="Input.Day.Activity_Date" type="date" class="form-control form-control-lg bg-light border-0" />
+                        <input asp-for="Input.Day.Activity_Date" type="date" class="form-control bg-light border-0 fw-bold" />
                     </div>
-                    <div class="col-md-5">
-                        <label class="form-label text-muted small fw-bold">NOTES / EVENT NAME</label>
-                        <input asp-for="Input.Day.Notes" class="form-control form-control-lg bg-light border-0" placeholder="e.g. Special Event" />
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-bold">EVENT / NOTES</label>
+                        <input asp-for="Input.Day.Notes" class="form-control bg-light border-0" placeholder="e.g. Sunday Service" />
                     </div>
-                    <div class="col-md-3 d-flex align-items-end">
-                        <div class="form-check form-switch mb-2 ms-1">
-                            <input asp-for="Input.Day.Is_Sunday" class="form-check-input" type="checkbox" id="isSundayCheck" style="cursor: pointer; width: 3em; height: 1.5em;">
-                            <label class="form-check-label fw-bold ms-2 pt-1" for="isSundayCheck">
-                                Sunday Service?
-                            </label>
+                    <div class="col-md-3">
+                        <div class="form-check form-switch d-flex align-items-center mt-4">
+                            <input asp-for="Input.Day.Is_Sunday" class="form-check-input me-2" type="checkbox" id="isSundayCheck" style="transform: scale(1.4);">
+                            <label class="form-check-label fw-bold" for="isSundayCheck">Sunday Service?</label>
                         </div>
                     </div>
                 </div>
@@ -45,31 +39,29 @@
         </div>
 
         <div class="row">
-            <div class="col-lg-7">
+            <div class="col-lg-8">
 
                 <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-success bg-opacity-10 py-3">
+                        <h6 class="fw-bold text-success mb-0"><i class="bi bi-bank me-2"></i>General Fund / Budget Income</h6>
+                    </div>
                     <div class="card-body p-4">
-                        <h6 class="card-title fw-bold text-success mb-3">
-                            <i class="bi bi-wallet2 me-2"></i>Money In (Income)
-                        </h6>
-                        <div class="bg-success bg-opacity-10 p-3 rounded-3">
-                            <div class="row g-2">
-                                <div class="col-md-6">
-                                    <label class="small text-muted fw-bold">SOURCE</label>
-                                    <select asp-for="Input.BudgetEntry.Source_Id" asp-items="Model.SourceOptions" class="form-select border-0 shadow-sm">
-                                        <option value="">-- Select Source --</option>
-                                    </select>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="small text-muted fw-bold">SOURCE</label>
+                                <select asp-for="Input.BudgetEntry.Source_Id" asp-items="Model.SourceOptions" class="form-select border-0 bg-light shadow-sm fw-bold">
+                                    <option value="">-- Select Source --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="small text-muted fw-bold">AMOUNT</label>
+                                <div class="input-group shadow-sm">
+                                    <span class="input-group-text border-0 bg-white text-success fw-bold">₱</span>
+                                    <input asp-for="Input.BudgetEntry.Amount" id="budgetAmount" type="number" class="form-control border-0 fw-bold fs-5 text-success other-input" placeholder="0" oninput="updateCalculations()" />
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="small text-muted fw-bold">AMOUNT</label>
-                                    <div class="input-group shadow-sm">
-                                        <span class="input-group-text border-0 bg-white text-success fw-bold">₱</span>
-                                        <input asp-for="Input.BudgetEntry.Amount" type="number" step="0.01" class="form-control border-0" placeholder="0.00" />
-                                    </div>
-                                </div>
-                                <div class="col-12 mt-2">
-                                    <input asp-for="Input.BudgetEntry.Notes" class="form-control border-0 shadow-sm" placeholder="Add a note for this income..." />
-                                </div>
+                            </div>
+                            <div class="col-12">
+                                <input asp-for="Input.BudgetEntry.Notes" class="form-control border-0 bg-light shadow-sm" placeholder="Description (e.g. Budget from Mother Church)..." />
                             </div>
                         </div>
                     </div>
@@ -83,41 +75,35 @@
                             </h6>
                             <small class="text-muted" style="font-size: 0.75rem;">Empty rows are ignored</small>
                         </div>
-
                         <div class="table-responsive">
                             <table class="table table-borderless align-middle mb-0">
-                                <thead class="text-secondary small text-uppercase" style="font-size: 0.75rem; border-bottom: 1px solid #eee;">
+                                <thead class="text-secondary small text-uppercase" style="border-bottom: 1px solid #eee;">
                                     <tr>
-                                        <th style="min-width: 140px;">Category</th>
-                                        <th style="min-width: 110px;">Amount</th>
-                                        <th style="min-width: 140px;">Paid From</th>
-                                        <th style="min-width: 150px;">Notes</th>
+                                        <th style="min-width: 150px;">Category</th>
+                                        <th style="min-width: 120px;">Amount</th>
+                                        <th style="min-width: 120px;">Paid From</th>
+                                        <th>Notes</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @for (int i = 0; i < Model.Input.ExpensesList.Count; i++)
                                     {
                                         <tr style="border-bottom: 1px dashed #f0f0f0;">
-                                            <td class="ps-0">
-                                                <select name="Input.ExpensesList[@i].Category_Id" asp-items="Model.CategoryOptions" class="form-select form-select-sm bg-light border-0 text-dark fw-bold">
+                                            <td>
+                                                <select name="Input.ExpensesList[@i].Category_Id" asp-items="Model.CategoryOptions" class="form-select form-select-sm bg-light border-0 fw-bold">
                                                     <option value="">- Select -</option>
                                                 </select>
                                             </td>
-
                                             <td>
-                                                <div class="input-group input-group-sm">
-                                                    <input name="Input.ExpensesList[@i].Amount" type="number" step="0.01" class="form-control bg-light border-0" placeholder="0.00" />
-                                                </div>
+                                                <input name="Input.ExpensesList[@i].Amount" type="number" step="0.01" class="form-control form-control-sm bg-light border-0 fw-bold other-input" placeholder="0.00" oninput="updateCalculations()" />
                                             </td>
-
                                             <td>
                                                 <select name="Input.ExpensesList[@i].Source_Id" asp-items="Model.SourceOptions" class="form-select form-select-sm bg-light border-0 text-secondary">
                                                     <option value="">- Wallet -</option>
                                                 </select>
                                             </td>
-
-                                            <td class="pe-0">
-                                                <input name="Input.ExpensesList[@i].Notes" class="form-control form-control-sm bg-light border-0" placeholder="Details..." />
+                                            <td>
+                                                <input name="Input.ExpensesList[@i].Notes" class="form-control form-control-sm bg-light border-0" placeholder="..." />
                                             </td>
                                         </tr>
                                     }
@@ -127,60 +113,226 @@
                     </div>
                 </div>
 
+                <div class="card border-0 shadow-sm mb-5 overflow-hidden">
+                    <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-people-fill me-2"></i>Member Envelopes</h6>
+                        <span class="badge bg-white text-primary fw-bold fs-6" id="envelopeTotalBadge">Total: ₱0</span>
+                    </div>
+
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="envelopeTable">
+                                <thead class="bg-light text-muted small text-uppercase fw-bold">
+                                    <tr>
+                                        <th class="ps-4" style="width: 30%">Member Name</th>
+                                        <th style="width: 18%">Tithes</th>
+                                        <th style="width: 18%">Offering</th>
+                                        <th style="width: 18%" class="text-primary">Solomon</th>
+                                        <th style="width: 16%" class="text-end pe-4">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < Model.Input.EnvelopeList.Count; i++)
+                                    {
+                                        string rowStyle = (i < 5) ? "" : "display: none;";
+                                        <tr class="envelope-row" style="@rowStyle">
+                                            <td class="ps-3 py-2">
+                                                <input asp-for="Input.EnvelopeList[i].Member_Name" class="form-control border-0 bg-transparent fw-bold text-dark" placeholder="Name..." />
+                                            </td>
+                                            <td class="py-2">
+                                                <input asp-for="Input.EnvelopeList[i].Tithes_Amount" type="number" class="form-control border-0 bg-light text-center env-tithe fw-bold" placeholder="0" oninput="updateRowTotal(this)" />
+                                            </td>
+                                            <td class="py-2">
+                                                <input asp-for="Input.EnvelopeList[i].Offering_Amount" type="number" class="form-control border-0 bg-light text-center env-offering fw-bold" placeholder="0" oninput="updateRowTotal(this)" />
+                                            </td>
+                                            <td class="py-2">
+                                                <div class="input-group input-group-sm">
+                                                    <input asp-for="Input.EnvelopeList[i].Solomon_Amount" type="number"
+                                                           class="form-control border-0 text-center env-solomon fw-bold text-white bg-primary"
+                                                           placeholder="0" oninput="updateRowTotal(this)"
+                                                           style="border-radius: 6px;" />
+                                                </div>
+                                            </td>
+                                            <td class="text-end pe-4 fw-bold text-secondary env-row-total fs-6">₱0</td>
+                                            <input type="hidden" asp-for="Input.EnvelopeList[i].Total_Amount" class="env-row-val" />
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="p-3 bg-light border-top text-center">
+                            <button type="button" class="btn btn-outline-primary btn-sm fw-bold rounded-pill px-4" onclick="showNextRow()">
+                                <i class="bi bi-plus-lg me-1"></i> Add New Row
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
-            <div class="col-lg-5">
-                <div class="card border-0 shadow-sm mb-4">
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm mb-4 sticky-top" style="top: 20px; z-index: 100;">
                     <div class="card-body p-4">
-                        <h6 class="card-title fw-bold text-primary mb-3">
-                            <i class="bi bi-cash-coin me-2"></i>Offering Breakdown
+                        <h6 class="card-title fw-bold text-dark mb-3">
+                            <i class="bi bi-cash-stack me-2"></i>Cash Breakdown
                         </h6>
-                        <div class="bg-light rounded-3 p-2">
-                            <table class="table table-borderless align-middle mb-0">
-                                <thead class="text-muted small text-center" style="border-bottom: 1px solid #ddd;">
-                                    <tr>
-                                        <th class="py-2">Denomination</th>
-                                        <th class="py-2">Quantity</th>
-                                    </tr>
+
+                        <div class="bg-light rounded-3 p-3 mb-3 border">
+                            <div class="d-flex justify-content-between text-muted small mb-2">
+                                <span>Total Envelopes:</span>
+                                <span class="fw-bold" id="summaryEnvelopes">₱0</span>
+                            </div>
+                            <div class="border-top pt-2 d-flex justify-content-between align-items-center">
+                                <span class="fw-bold text-dark small">TARGET CASH:</span>
+                                <span class="fw-bold text-primary fs-4" id="targetCash">₱0</span>
+                            </div>
+                            <div class="mt-1 text-center">
+                                <small class="text-muted fst-italic" style="font-size: 0.75rem;">(Excludes Budget Income)</small>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive mb-3">
+                            <table class="table table-sm table-borderless align-middle mb-0">
+                                <thead class="text-muted small text-center" style="border-bottom: 1px solid #eee;">
+                                    <tr><th class="pb-2">Denom</th><th class="pb-2">Qty</th></tr>
                                 </thead>
                                 <tbody>
                                     @for (int i = 0; i < Model.Input.OfferingList.Count; i++)
                                     {
                                         <tr>
-                                            <td class="text-center">
-                                                <input type="hidden" name="Input.OfferingList[@i].Denomination" value="@Model.Input.OfferingList[i].Denomination" />
+                                            <td class="text-center py-1">
+                                                <input type="hidden" class="denom-val" name="Input.OfferingList[@i].Denomination" value="@Model.Input.OfferingList[i].Denomination" />
                                                 <input type="hidden" name="Input.OfferingList[@i].Notes" value="@Model.Input.OfferingList[i].Notes" />
 
-                                                <span class="badge bg-white text-dark border shadow-sm px-3 py-2" style="font-size: 0.9rem; min-width: 80px;">
-                                                    @Model.Input.OfferingList[i].Denomination
-                                                </span>
-                                                @if (!string.IsNullOrEmpty(Model.Input.OfferingList[i].Notes))
-                                                {
-                                                    <div class="text-muted" style="font-size: 0.65rem;">@Model.Input.OfferingList[i].Notes</div>
-                                                }
+                                                <div class="d-flex flex-column align-items-center">
+                                                    <span class="badge bg-white text-dark border shadow-sm" style="min-width: 60px;">
+                                                        @Model.Input.OfferingList[i].Denomination
+                                                    </span>
+                                                    @if (!string.IsNullOrEmpty(Model.Input.OfferingList[i].Notes))
+                                                    {
+                                                        <small class="text-muted mt-1" style="font-size: 0.65rem;">@Model.Input.OfferingList[i].Notes</small>
+                                                    }
+                                                </div>
                                             </td>
-                                            <td>
-                                                <input name="Input.OfferingList[@i].Quantity"
-                                                       value="@Model.Input.OfferingList[i].Quantity"
-                                                       type="number" min="0"
-                                                       class="form-control text-center fw-bold text-primary border-0 bg-white shadow-sm mx-auto"
-                                                       style="max-width: 100px;" />
+                                            <td class="py-1">
+                                                <input name="Input.OfferingList[@i].Quantity" value="@Model.Input.OfferingList[i].Quantity"
+                                                       type="number" min="0" class="form-control form-control-sm text-center fw-bold text-primary border bg-light mx-auto denom-qty"
+                                                       style="max-width: 80px;" oninput="updateCalculations()" />
                                             </td>
                                         </tr>
                                     }
                                 </tbody>
                             </table>
                         </div>
+
+                        <div id="matchMessage" class="alert alert-secondary text-center py-2 small fw-bold mb-2">
+                            Enter details to start...
+                        </div>
+
+                        <button type="submit" id="btnSave" class="btn btn-primary w-100 py-3 fw-bold shadow-sm rounded-3" disabled>
+                            <i class="bi bi-check-circle-fill me-2"></i> SAVE RECORD
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="d-grid gap-2 mb-5 pb-4">
-            <button type="submit" class="btn btn-primary py-3 fw-bold shadow-sm rounded-3">
-                <i class="bi bi-check-circle-fill me-2"></i> SAVE RECORD
-            </button>
-        </div>
-
     </form>
 </div>
+
+<script>
+    function showNextRow() {
+        var hiddenRows = document.querySelectorAll('.envelope-row[style*="display: none"]');
+        if (hiddenRows.length > 0) {
+            hiddenRows[0].style.display = 'table-row';
+        } else {
+            alert("Maximum rows reached.");
+        }
+    }
+
+    function updateRowTotal(input) {
+        let row = input.closest('tr');
+        let t = parseFloat(row.querySelector('.env-tithe').value) || 0;
+        let o = parseFloat(row.querySelector('.env-offering').value) || 0;
+        let s = parseFloat(row.querySelector('.env-solomon').value) || 0;
+        let total = t + o + s;
+
+        row.querySelector('.env-row-total').innerText = "₱" + total.toLocaleString();
+
+        // IMPORTANT: Update hidden field for Model Binding!
+        row.querySelector('.env-row-val').value = total;
+
+        updateCalculations();
+    }
+
+    function updateCalculations() {
+        // 1. Calculate Envelopes
+        let totalEnv = 0;
+        document.querySelectorAll('tbody tr').forEach(row => {
+            let t = parseFloat(row.querySelector('.env-tithe')?.value) || 0;
+            let o = parseFloat(row.querySelector('.env-offering')?.value) || 0;
+            let s = parseFloat(row.querySelector('.env-solomon')?.value) || 0;
+            totalEnv += (t + o + s);
+        });
+
+        document.getElementById('summaryEnvelopes').innerText = "₱" + totalEnv.toLocaleString();
+        document.getElementById('envelopeTotalBadge').innerText = "Total: ₱" + totalEnv.toLocaleString();
+        document.getElementById('targetCash').innerText = "₱" + totalEnv.toLocaleString();
+
+        // 2. Physical Cash
+        let totalCash = 0;
+        let denoms = document.querySelectorAll('.denom-val');
+        let qtys = document.querySelectorAll('.denom-qty');
+
+        for (let i = 0; i < denoms.length; i++) {
+            totalCash += (parseFloat(denoms[i].value) * (parseFloat(qtys[i].value) || 0));
+        }
+
+        // 3. Check Other Inputs (Budget / Expenses)
+        let hasOtherInputs = false;
+        document.querySelectorAll('.other-input').forEach(input => {
+            if ((parseFloat(input.value) || 0) > 0) hasOtherInputs = true;
+        });
+
+        // 4. VALIDATION LOGIC (THE FIX)
+        let msg = document.getElementById('matchMessage');
+        let btn = document.getElementById('btnSave');
+
+        // CASE A: Empty form
+        if (totalEnv === 0 && !hasOtherInputs && totalCash === 0) {
+            msg.className = "alert alert-secondary text-center py-2 small fw-bold mb-2";
+            msg.innerText = "Enter details to start...";
+            btn.disabled = true;
+            return;
+        }
+
+        // CASE B: Has Budget/Expense BUT NO Envelopes (Allow Save)
+        if (totalEnv === 0 && hasOtherInputs) {
+            // But verify they didn't mistakenly add cash count without envelopes
+            if (totalCash > 0) {
+                 msg.className = "alert alert-warning text-center py-2 small fw-bold mb-2";
+                 msg.innerText = "You entered cash count but no envelopes!";
+                 btn.disabled = true;
+            } else {
+                 msg.className = "alert alert-success text-center py-2 small fw-bold mb-2";
+                 msg.innerText = "Expense/Budget Entry Ready";
+                 btn.disabled = false;
+            }
+            return;
+        }
+
+        // CASE C: Has Envelopes (Must Balance)
+        if (totalEnv > 0) {
+            if (totalEnv === totalCash) {
+                msg.className = "alert alert-success text-center py-2 small fw-bold mb-2";
+                msg.innerHTML = "<i class='bi bi-check-circle'></i> BALANCED!";
+                btn.disabled = false;
+            } else {
+                let diff = totalEnv - totalCash;
+                msg.className = "alert alert-danger text-center py-2 small fw-bold mb-2";
+                msg.innerText = diff > 0 ? "Missing ₱" + diff.toLocaleString() : "Excess ₱" + Math.abs(diff).toLocaleString();
+                btn.disabled = true;
+            }
+        }
+    }
+</script>

@@ -29,6 +29,7 @@
         }
 
         /* Sidebar Container */
+        /* Sidebar Container */
         .sidebar {
             width: 260px;
             background: #212529;
@@ -38,7 +39,21 @@
             top: 0;
             left: 0;
             z-index: 1000;
+            /* FIX: Enable Scrolling */
+            height: 100vh; /* Set specific height */
+            overflow-y: auto; /* Enable vertical scroll */
+            overflow-x: hidden; /* Hide horizontal scrollbar */
         }
+
+            /* Optional: Custom Scrollbar for nicer look */
+            .sidebar::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            .sidebar::-webkit-scrollbar-thumb {
+                background-color: rgba(255,255,255,0.2);
+                border-radius: 4px;
+            }
 
         .main-content {
             margin-left: 260px;
@@ -134,20 +149,48 @@
 
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">
-                    <a asp-page="/Index" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" ? "active" : "")">
+                    <a asp-page="/Index"
+                       class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" ? "active" : "")">
                         <i class="bi bi-grid-1x2-fill"></i> Dashboard
                     </a>
                 </li>
+
                 <li class="nav-item">
-                    <a asp-page="/Reports/Monthly" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString()?.Contains("Reports") == true ? "active" : "")">
+                    <a asp-page="/Reports/Monthly"
+                       class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Reports/Monthly" ? "active" : "")">
                         <i class="bi bi-file-earmark-bar-graph-fill"></i> Reports
                     </a>
                 </li>
+
                 <li class="nav-item">
-                    <a asp-page="/History/Index" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString()?.Contains("History") == true ? "active" : "")">
+                    <a asp-page="/Reports/MemberHistory"
+                       class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Reports/MemberHistory" ? "active" : "")">
+                        <i class="bi bi-people-fill"></i> Giving History
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a asp-page="/History/Index"
+                       class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString()?.StartsWith("/History") == true ? "active" : "")">
                         <i class="bi bi-clock-history"></i> History
                     </a>
                 </li>
+                @if (User.IsInRole("Pastor"))
+                {
+                    <li class="nav-item">
+                        <a asp-page="/Requests/Index" class="btn btn-primary w-100 fw-bold shadow-sm py-2" style="border-radius: 30px;">
+                            <i class="bi bi-send-plus"></i> Fund Request
+                        </a>
+                    </li>
+                }
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="nav-item">
+                        <a asp-page="/Admin/Requests" class="nav-link text-white-50">
+                            <i class="bi bi-inbox"></i> Review Requests
+                        </a>
+                    </li>
+                }
 
                 @if (User.IsInRole("Admin"))
                 {
@@ -161,11 +204,21 @@
 
                 @if (User.IsInRole("Admin"))
                 {
-                    <li class="nav-item mt-1"><a asp-page="/Settings/Index" class="nav-link text-white-50"><i class="bi bi-sliders"></i> Settings</a></li>
+                    <li class="nav-item mt-1">
+                        <a asp-page="/Settings/Index"
+                           class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString()?.StartsWith("/Settings") == true ? "active" : "text-white-50")">
+                            <i class="bi bi-sliders"></i> Settings
+                        </a>
+                    </li>
                 }
                 @if (User.IsInRole("Admin") || User.IsInRole("Auditor"))
                 {
-                    <li class="nav-item"><a asp-page="/Audit/Index" class="nav-link text-white-50"><i class="bi bi-shield-check"></i> Audit Trail</a></li>
+                    <li class="nav-item">
+                        <a asp-page="/Audit/Index"
+                           class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString()?.StartsWith("/Audit") == true ? "active" : "text-white-50")">
+                            <i class="bi bi-shield-check"></i> Audit Trail
+                        </a>
+                    </li>
                 }
             </ul>
 

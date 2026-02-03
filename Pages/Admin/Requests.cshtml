@@ -1,0 +1,81 @@
+﻿@page
+@model FinanceSystem.Pages.Admin.RequestsModel
+@{
+    ViewData["Title"] = "Pending Requests";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold"><i class="bi bi-inbox-fill me-2"></i>Review Requests</h3>
+        <div class="badge bg-success p-2 fs-6 shadow-sm">
+            Current Cash: ₱@Model.CurrentCashOnHand.ToString("N2")
+        </div>
+    </div>
+
+    @if (!Model.PendingRequests.Any())
+    {
+        <div class="alert alert-light border text-center py-5">
+            <h5 class="text-muted">No pending requests.</h5>
+        </div>
+    }
+
+    <div class="row">
+        @foreach (var item in Model.PendingRequests)
+        {
+            // Normalize Date for display and hidden input
+            var cleanDate = item.DateNeeded?.Date ?? DateTime.Today;
+
+            // --- SMART ADVISOR LOGIC (Keep existing) ---
+            string adviceColor = item.Amount > Model.CurrentCashOnHand ? "danger" :
+            ((item.Amount / (Model.CurrentCashOnHand > 0 ? Model.CurrentCashOnHand : 1)) * 100 > 50 ? "warning text-dark" : "success");
+            string adviceText = item.Amount > Model.CurrentCashOnHand ? "CRITICAL: Insufficient Funds" :
+            ((item.Amount / (Model.CurrentCashOnHand > 0 ? Model.CurrentCashOnHand : 1)) * 100 > 50 ? "High Impact Request" : "Safe to Approve");
+
+            <div class="col-md-6 mb-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="badge bg-light text-dark border">@item.RequestorName</span>
+                            <span class="text-muted small fw-bold">Needed: @cleanDate.ToString("MMM dd, yyyy")</span>
+                        </div>
+
+                        <h5 class="fw-bold mb-1">@item.Title</h5>
+                        <h3 class="fw-bold text-primary mb-3">₱@item.Amount.ToString("N0")</h3>
+
+                        <label class="small fw-bold text-muted mb-1">BREAKDOWN:</label>
+                        <div class="text-muted bg-light p-3 rounded small fst-italic mb-3 border"
+                             style="max-height: 120px; overflow-y: auto; white-space: pre-wrap;">
+                            @(string.IsNullOrEmpty(item.Reason) ? "No breakdown provided." : item.Reason)
+                        </div>
+
+                        <div class="alert alert-@adviceColor py-2 px-3 mb-3 small fw-bold mt-auto">
+                            <i class="bi bi-info-circle me-1"></i> @adviceText
+                        </div>
+
+                        <form method="post" class="mt-2">
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <input type="hidden" name="title" value="@item.Title" />
+                            <input type="hidden" name="amount" value="@item.Amount" />
+
+                            <input type="hidden" name="dateNeeded" value="@cleanDate.ToString("yyyy-MM-dd")" />
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-muted">Admin Note (Optional)</label>
+                                <textarea name="adminComment" class="form-control form-control-sm" rows="2" placeholder="Note to Pastor..."></textarea>
+                            </div>
+
+                            <div class="d-grid gap-2 d-md-flex">
+                                <button type="submit" asp-page-handler="Approve" class="btn btn-success fw-bold flex-grow-1">
+                                    <i class="bi bi-check-lg"></i> Approve
+                                </button>
+                                <button type="submit" asp-page-handler="Reject" class="btn btn-outline-danger fw-bold flex-grow-1">
+                                    <i class="bi bi-x-lg"></i> Reject
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

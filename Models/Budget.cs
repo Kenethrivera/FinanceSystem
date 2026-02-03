@@ -19,5 +19,6 @@ namespace FinanceSystem.Models
 
         [Column("notes")]
         public string Notes { get; set; } = string.Empty;
+
     }
 }

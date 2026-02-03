@@ -2,8 +2,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using FinanceSystem.Services;
 using FinanceSystem.Models;
 using FinanceSystem.ViewModels;
-using FinanceSystem;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinanceSystem.Pages
@@ -16,9 +14,17 @@ namespace FinanceSystem.Pages
         {
             _supabase = supabase;
         }
-        public List<FinancialDayViewModel> RecentActivty { get; set; } = new();
 
-        // lists for total
+        public List<FinancialDayViewModel> RecentActivty { get; set; } = new();
+        public List<PlannedExpenseViewModel> UpcomingExpenses { get; set; } = new();
+        public List<PlannedExpense> AllPlans { get; set; } = new();
+
+        [BindProperty]
+        public PlannedExpense NewPlan { get; set; }
+
+        [BindProperty]
+        public PlannedExpense EditPlan { get; set; }
+
         public decimal GrandTotal_CashOnHand { get; set; }
         public decimal GrandTotal_Pledges { get; set; }
 
@@ -39,41 +45,120 @@ namespace FinanceSystem.Pages
         {
             await _supabase.InitializeAsync(true);
 
+            // Fetch Data
             var days = await _supabase.Client.From<Financial_Day>().Get();
             var budgets = await _supabase.Client.From<Budget>().Get();
             var expenses = await _supabase.Client.From<Expenses>().Get();
-            var offerings = await _supabase.Client.From<Offering>().Get();
             var sources = await _supabase.Client.From<Source>().Get();
+            var categories = await _supabase.Client.From<Category>().Get();
+            var allGivings = await _supabase.Client.From<MemberGiving>().Get();
 
-            // Reset Total
+            // 1. CALCULATE GLOBAL TOTALS
             GrandTotal_Pledges = 0;
             GrandTotal_CashOnHand = 0;
+            decimal TotalSolomonGlobal = 0;
 
-            // pledge
-            var pledgeIncome = budgets.Models
-                .Where(b => sources.Models.FirstOrDefault(s => s.Id == b.Source_Id)?.Name?.ToLower().Contains("pledge") ?? false)
-                .Sum(b => b.Amount);
+            var totalSolomon = allGivings.Models.Sum(g => g.Solomon_Amount);
+            var totalTithesOff = allGivings.Models.Sum(g => g.Tithes_Amount + g.Offering_Amount);
 
-            var pledgeExpenses = expenses.Models
-                .Where(e => sources.Models.FirstOrDefault(s => s.Id == e.Source_Id)?.Name?.ToLower().Contains("pledge") ?? false)
-                .Sum(e => e.Amount);
+            TotalSolomonGlobal = totalSolomon;
+            GrandTotal_Pledges += totalSolomon;
+            GrandTotal_CashOnHand += totalTithesOff;
 
-            GrandTotal_Pledges = pledgeIncome - pledgeExpenses;
+            foreach (var b in budgets.Models)
+            {
+                var sName = sources.Models.FirstOrDefault(s => s.Id == b.Source_Id)?.Name?.ToLower() ?? "";
+                if (sName.Contains("pledge")) GrandTotal_Pledges += b.Amount;
+                else GrandTotal_CashOnHand += b.Amount;
+            }
 
-            // coh
-            var cohIncome = budgets.Models
-                .Where(b => !(sources.Models.FirstOrDefault(s => s.Id == b.Source_Id)?.Name?.ToLower().Contains("pledge") ?? false))
-                .Sum(b => b.Amount);
+            foreach (var e in expenses.Models)
+            {
+                var sName = sources.Models.FirstOrDefault(s => s.Id == e.Source_Id)?.Name?.ToLower() ?? "";
+                if (sName.Contains("pledge")) GrandTotal_Pledges -= e.Amount;
+                else GrandTotal_CashOnHand -= e.Amount;
+            }
 
-            var offeringIncome = offerings.Models.Sum(o => o.Total);
+            ViewData["TotalSolomon"] = TotalSolomonGlobal;
 
-            // C. Expenses (Paid using COH - Source is Null OR Source is not Pledge)
-            var cohExpenses = expenses.Models
-                .Where(e => e.Source_Id == null || !(sources.Models.FirstOrDefault(s => s.Id == e.Source_Id)?.Name.ToLower().Contains("pledge") ?? false))
-                .Sum(e => e.Amount);
+            // 2. UPCOMING EXPENSES LOGIC
+            var plansResponse = await _supabase.Client.From<PlannedExpense>()
+                .Order("id", Supabase.Postgrest.Constants.Ordering.Ascending)
+                .Get();
+            AllPlans = plansResponse.Models;
 
-            GrandTotal_CashOnHand = (cohIncome + offeringIncome) - cohExpenses;
+            var currentMonthStart = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            var currentMonthEnd = currentMonthStart.AddMonths(1).AddSeconds(-1);
 
+            var thisMonthDayIds = days.Models
+                .Where(d => d.Activity_Date >= currentMonthStart && d.Activity_Date <= currentMonthEnd)
+                .Select(d => d.Id)
+                .ToList();
+
+            var actualExpensesThisMonth = expenses.Models
+                .Where(e => thisMonthDayIds.Contains(e.Financial_Day_Id))
+                .ToList();
+
+            UpcomingExpenses.Clear();
+
+            foreach (var plan in AllPlans)
+            {
+                bool isDueThisMonth = false;
+                DateTime dueDate = DateTime.Now;
+
+                if (plan.IsMonthly)
+                {
+                    isDueThisMonth = true;
+                    dueDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, plan.DueDay ?? 1);
+                }
+                else if (plan.TargetDate.HasValue && plan.TargetDate.Value.Month == DateTime.Now.Month && plan.TargetDate.Value.Year == DateTime.Now.Year)
+                {
+                    isDueThisMonth = true;
+                    dueDate = plan.TargetDate.Value;
+                }
+
+                if (isDueThisMonth)
+                {
+                    var matchingExpenses = actualExpensesThisMonth.Where(e =>
+                    {
+                        bool expenseNoteMatch = (e.Notes ?? "").Contains(plan.Title, StringComparison.OrdinalIgnoreCase);
+
+                        var catName = categories.Models.FirstOrDefault(c => c.Id == e.Category_Id)?.Name ?? "";
+                        bool catMatch = catName.Equals(plan.Title, StringComparison.OrdinalIgnoreCase);
+
+                        var parentDay = days.Models.FirstOrDefault(d => d.Id == e.Financial_Day_Id);
+                        bool parentNoteMatch = (parentDay?.Notes ?? "").Contains(plan.Title, StringComparison.OrdinalIgnoreCase);
+
+                        return expenseNoteMatch || catMatch || parentNoteMatch;
+                    }).ToList();
+
+                    decimal amountPaid = matchingExpenses.Sum(e => e.Amount);
+                    bool isPaid = false;
+
+                    if (plan.Amount > 0)
+                    {
+                        if (amountPaid >= (plan.Amount * 0.85m)) isPaid = true;
+                    }
+                    else
+                    {
+                        if (matchingExpenses.Any()) isPaid = true;
+                    }
+
+                    if (!isPaid)
+                    {
+                        UpcomingExpenses.Add(new PlannedExpenseViewModel
+                        {
+                            Title = plan.Title,
+                            Amount = plan.Amount,
+                            DueDate = dueDate,
+                            IsRecurring = plan.IsMonthly
+                        });
+                    }
+                }
+            }
+            UpcomingExpenses = UpcomingExpenses.OrderBy(x => x.DueDate).ToList();
+
+            // 3. RECENT ACTIVITY LIST
             IEnumerable<Financial_Day> query = days.Models;
 
             if (!string.IsNullOrEmpty(SearchText))
@@ -81,102 +166,46 @@ namespace FinanceSystem.Pages
                 query = query.Where(d => (d.Notes ?? "").Contains(SearchText, StringComparison.OrdinalIgnoreCase));
             }
 
-            if (SearchYear.HasValue)
-            {
-                query = query.Where(d => d.Activity_Date.Year == SearchYear.Value);
-            }
+            if (SearchYear.HasValue) query = query.Where(d => d.Activity_Date.Year == SearchYear.Value);
             else if (SearchMonth.HasValue)
             {
                 SearchYear = DateTime.Now.Year;
                 query = query.Where(d => d.Activity_Date.Year == SearchYear.Value);
             }
 
-            if (SearchMonth.HasValue)
-            {
-                query = query.Where(d => d.Activity_Date.Month == SearchMonth.Value);
-            }
-
-            bool isSearching = !string.IsNullOrEmpty(SearchText) || SearchMonth.HasValue || SearchYear.HasValue;
+            if (SearchMonth.HasValue) query = query.Where(d => d.Activity_Date.Month == SearchMonth.Value);
 
             var sortedDays = query.OrderByDescending(d => d.Activity_Date).ToList();
-
-            if (!isSearching)
+            if (string.IsNullOrEmpty(SearchText) && !SearchMonth.HasValue && !SearchYear.HasValue)
             {
                 sortedDays = sortedDays.Take(10).ToList();
             }
 
             RecentActivty.Clear();
 
-            var labels = new List<string>();
-            var incomeData = new List<decimal>();
-            var expenseData = new List<decimal>();
-
-            for (int i = 5; i >= 0; i--)
-            {
-                var d = DateTime.Now.AddMonths(-i);
-                var start = new DateTime(d.Year, d.Month, 1);
-                var end = start.AddMonths(1).AddSeconds(-1);
-
-                labels.Add(d.ToString("MMM"));
-
-                var monthDays = (await _supabase.Client.From<Financial_Day>()
-                    .Filter("activity_date", Supabase.Postgrest.Constants.Operator.GreaterThanOrEqual, start.ToString("yyyy-MM-dd"))
-                    .Filter("activity_date", Supabase.Postgrest.Constants.Operator.LessThanOrEqual, end.ToString("yyyy-MM-dd"))
-                    .Get()).Models;
-
-                var monthDayIds = monthDays.Select(x => x.Id).ToList();
-
-                decimal inc = 0;
-                decimal exp = 0;
-
-                if (monthDayIds.Any())
-                {
-                    var bud = (await _supabase.Client.From<Budget>().Get()).Models.Where(x => monthDayIds.Contains(x.Financial_Day_Id)).Sum(x => x.Amount);
-                    var off = (await _supabase.Client.From<Offering>().Get()).Models.Where(x => monthDayIds.Contains(x.Financial_Day_Id)).Sum(x => x.Total);
-                    var exps = (await _supabase.Client.From<Expenses>().Get()).Models.Where(x => monthDayIds.Contains(x.Financial_Day_Id)).Sum(x => x.Amount);
-
-                    inc = bud + off;
-                    exp = exps;
-                }
-
-                incomeData.Add(inc);
-                expenseData.Add(exp);
-            }
-
-            ChartLabels = labels.ToArray();
-            ChartIncome = incomeData.ToArray();
-            ChartExpense = expenseData.ToArray();
-
             foreach (var day in sortedDays)
             {
                 decimal dayCOH = 0;
                 decimal dayPledge = 0;
 
-                var dayBudgets = budgets.Models.Where(b => b.Financial_Day_Id == day.Id);
-                var dayOfferings = offerings.Models.Where(o => o.Financial_Day_Id == day.Id);
-                var dayExpenses = expenses.Models.Where(e => e.Financial_Day_Id == day.Id);
+                var dayGivings = allGivings.Models.Where(g => g.Financial_Day_Id == day.Id);
+                dayPledge += dayGivings.Sum(g => g.Solomon_Amount);
+                dayCOH += dayGivings.Sum(g => g.Tithes_Amount + g.Offering_Amount);
 
+                var dayBudgets = budgets.Models.Where(b => b.Financial_Day_Id == day.Id);
                 foreach (var b in dayBudgets)
                 {
                     var sName = sources.Models.FirstOrDefault(s => s.Id == b.Source_Id)?.Name?.ToLower() ?? "";
                     if (sName.Contains("pledge")) dayPledge += b.Amount;
                     else dayCOH += b.Amount;
-                    
                 }
-                dayCOH += dayOfferings.Sum(o => o.Total);
 
+                var dayExpenses = expenses.Models.Where(e => e.Financial_Day_Id == day.Id);
                 foreach (var e in dayExpenses)
                 {
                     var sName = sources.Models.FirstOrDefault(s => s.Id == e.Source_Id)?.Name?.ToLower() ?? "";
-
-                    if (sName.Contains("pledge"))
-                    {
-                        dayPledge -= e.Amount; 
-                    }
-                    else
-                    {
-                        dayCOH -= e.Amount; 
-                    }
+                    if (sName.Contains("pledge")) dayPledge -= e.Amount;
+                    else dayCOH -= e.Amount;
                 }
 
                 RecentActivty.Add(new FinancialDayViewModel
@@ -189,18 +218,114 @@ namespace FinanceSystem.Pages
                     PledgeAmount = dayPledge
                 });
             }
+
+            // 4. CHART DATA
+            var labels = new List<string>();
+            var incomeData = new List<decimal>();
+            var expenseData = new List<decimal>();
+
+            for (int i = 5; i >= 0; i--)
+            {
+                var d = DateTime.Now.AddMonths(-i);
+                var start = new DateTime(d.Year, d.Month, 1);
+                var end = start.AddMonths(1).AddSeconds(-1);
+
+                labels.Add(d.ToString("MMM"));
+
+                var monthDayIds = days.Models
+                    .Where(x => x.Activity_Date >= start && x.Activity_Date <= end)
+                    .Select(x => x.Id).ToList();
+
+                decimal inc = 0;
+                decimal exp = 0;
+
+                if (monthDayIds.Any())
+                {
+                    var mBudgets = budgets.Models.Where(x => monthDayIds.Contains(x.Financial_Day_Id)).Sum(x => x.Amount);
+                    var mEnvelopes = allGivings.Models.Where(x => monthDayIds.Contains(x.Financial_Day_Id)).Sum(x => x.Total_Amount);
+
+                    inc = mBudgets + mEnvelopes;
+                    exp = expenses.Models.Where(x => monthDayIds.Contains(x.Financial_Day_Id)).Sum(x => x.Amount);
+                }
+
+                incomeData.Add(inc);
+                expenseData.Add(exp);
+            }
+
+            ChartLabels = labels.ToArray();
+            ChartIncome = incomeData.ToArray();
+            ChartExpense = expenseData.ToArray();
         }
 
-        public  class FinancialDayViewModel
+        // --- POST HANDLERS ---
+
+        public async Task<IActionResult> OnPostAddPlanAsync()
+        {
+            await _supabase.InitializeAsync(true);
+
+            if (NewPlan.IsMonthly)
+            {
+                NewPlan.TargetDate = null;
+            }
+            else
+            {
+                NewPlan.DueDay = null;
+                // FIX: Add 12 hours to prevent previous-day timezone shift
+                if (NewPlan.TargetDate.HasValue)
+                {
+                    NewPlan.TargetDate = NewPlan.TargetDate.Value.Date.AddHours(12);
+                }
+            }
+
+            await _supabase.Client.From<PlannedExpense>().Insert(NewPlan);
+            return RedirectToPage();
+        }
+
+        public async Task<IActionResult> OnPostUpdatePlanAsync()
+        {
+            await _supabase.InitializeAsync(true);
+
+            if (EditPlan.IsMonthly)
+            {
+                EditPlan.TargetDate = null;
+            }
+            else
+            {
+                EditPlan.DueDay = null;
+                // FIX: Add 12 hours to prevent previous-day timezone shift
+                if (EditPlan.TargetDate.HasValue)
+                {
+                    EditPlan.TargetDate = EditPlan.TargetDate.Value.Date.AddHours(12);
+                }
+            }
+
+            await _supabase.Client.From<PlannedExpense>().Update(EditPlan);
+            return RedirectToPage();
+        }
+
+        public async Task<IActionResult> OnPostDeletePlanAsync(long id)
+        {
+            await _supabase.InitializeAsync(true);
+            await _supabase.Client.From<PlannedExpense>().Where(x => x.Id == id).Delete();
+            return RedirectToPage();
+        }
+
+        public class PlannedExpenseViewModel
+        {
+            public string Title { get; set; }
+            public decimal Amount { get; set; }
+            public DateTime DueDate { get; set; }
+            public bool IsRecurring { get; set; }
+        }
+
+        public class FinancialDayViewModel
         {
             public long Id { get; set; }
             public DateTime Date { get; set; }
             public bool IsSunday { get; set; }
             public string Notes { get; set; }
-
             public decimal CashOnHandNet { get; set; }
             public decimal PledgeAmount { get; set; }
-
         }
     }
 }
