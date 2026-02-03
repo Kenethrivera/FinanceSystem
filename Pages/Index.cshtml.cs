@@ -3,9 +3,11 @@ using FinanceSystem.Services;
 using FinanceSystem.Models;
 using FinanceSystem.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FinanceSystem.Pages
 {
+    [Authorize]
     public class IndexModel : PageModel
     {
         private readonly SupabaseService _supabase;
