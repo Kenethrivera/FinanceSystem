@@ -4,12 +4,23 @@
     ViewData["Title"] = "Monthly Report";
 }
 
+<div class="alert alert-info d-block d-md-none shadow-sm border-0 mb-3 rounded-3" role="alert">
+    <div class="d-flex align-items-start">
+        <i class="bi bi-info-circle-fill fs-4 me-3 text-info"></i>
+        <div>
+            <h6 class="fw-bold mb-1">View on Desktop</h6>
+            <p class="mb-0 small text-muted">This report contains detailed financial tables. For the best viewing experience, we recommend using a tablet or desktop computer.</p>
+        </div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+
 <div class="d-print-none mb-4">
     <div class="card border-0 shadow-sm">
-        <div class="card-body p-4">
+        <div class="card-body p-3 p-md-4">
             <h5 class="fw-bold text-dark mb-3"><i class="bi bi-filter-circle me-2 text-primary"></i>Report Options</h5>
             <form method="get" class="row g-3 align-items-end">
-                <div class="col-md-4">
+                <div class="col-12 col-md-4">
                     <label class="form-label text-muted small fw-bold">MONTH</label>
                     <select name="Month" class="form-select bg-light border-0" asp-for="Month">
                         @for (int i = 1; i <= 12; i++)
@@ -18,11 +29,11 @@
                         }
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-12 col-md-3">
                     <label class="form-label text-muted small fw-bold">YEAR</label>
                     <input name="Year" type="number" class="form-control bg-light border-0" asp-for="Year" />
                 </div>
-                <div class="col-md-5 d-flex gap-2">
+                <div class="col-12 col-md-5 d-flex gap-2 flex-column flex-md-row">
                     <button type="submit" class="btn btn-primary fw-bold px-4 shadow-sm flex-grow-1">
                         <i class="bi bi-eye me-1"></i> View Report
                     </button>
@@ -39,12 +50,13 @@
     </div>
 </div>
 
-<div class="container bg-white p-5 shadow my-4" style="max-width: 900px; border-top: 5px solid #0d6efd;">
-    <div class="text-center mb-5">
-        <h2 class="fw-bold text-uppercase mb-1" style="letter-spacing: 1px;">Financial Report</h2>
-        <h5 class="text-muted fw-normal">Pinagpala Family Center - Olivarez</h5>
-        <div class="mt-4 d-inline-block px-5 py-2 rounded shadow-sm bg-primary text-white">
-            <h4 class="text-white text-uppercase fw-bold mb-0 m-0">@Model.Report.MonthName @Model.Report.Year</h4>
+<div class="container bg-white p-3 p-md-5 shadow my-4" style="max-width: 900px; border-top: 5px solid #0d6efd;">
+
+    <div class="text-center mb-4 mb-md-5">
+        <h2 class="fw-bold text-uppercase mb-1 fs-3 fs-md-2" style="letter-spacing: 1px;">Financial Report</h2>
+        <h5 class="text-muted fw-normal small-on-mobile">Pinagpala Family Center - Olivarez</h5>
+        <div class="mt-4 d-inline-block px-4 px-md-5 py-2 rounded shadow-sm bg-primary text-white">
+            <h4 class="text-white text-uppercase fw-bold mb-0 m-0 fs-5 fs-md-4">@Model.Report.MonthName @Model.Report.Year</h4>
         </div>
     </div>
 
@@ -70,182 +82,195 @@
                             <i class="bi bi-sticky me-1"></i> @(string.IsNullOrEmpty(day.Notes) ? "No notes" : day.Notes)
                         </div>
                     </div>
-                    <a asp-page="/FinancialDays/Details" asp-route-id="@day.Id" class="btn btn-sm btn-light text-primary border fw-bold d-print-none">
+                    <a asp-page="/FinancialDays/Details" asp-route-id="@day.Id" class="btn btn-sm btn-light text-primary border fw-bold d-print-none text-nowrap">
                         Inspect <i class="bi bi-arrow-right small"></i>
                     </a>
                 </div>
 
-                <div class="card border-0 bg-light rounded-3 p-3">
-                    <table class="table table-sm table-borderless mb-0 bg-transparent">
+                <div class="card border-0 bg-light rounded-3 p-2 p-md-3">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-borderless mb-0 bg-transparent text-nowrap">
 
-                        @if (day.TotalIncomeForDay > 0)
-                        {
-                            <tr><td colspan="3" class="fw-bold text-success small text-uppercase pb-1"><i class="bi bi-arrow-down-circle-fill me-1"></i> Income</td></tr>
-                            @foreach (var income in day.IncomeList)
+                            @if (day.TotalIncomeForDay > 0)
+                            {
+                                <tr><td colspan="3" class="fw-bold text-success small text-uppercase pb-1"><i class="bi bi-arrow-down-circle-fill me-1"></i> Income</td></tr>
+                                @foreach (var income in day.IncomeList)
+                                {
+                                    <tr>
+                                        <td class="ps-md-4 ps-2 text-secondary">
+                                            @if (income.SourceName == "Sunday Envelopes")
+                                            {
+                                                <strong>@income.SourceName</strong>
+                                            }
+                                            else
+                                            {
+                                                @income.SourceName
+                                            }
+                                            <span class="text-muted small fst-italic ms-1 d-block d-md-inline">
+                                                @if (!string.IsNullOrEmpty(income.NoteDetail) && income.SourceName != "Sunday Envelopes")
+                                                {
+                                                    @($"({income.NoteDetail})")
+                                                }
+                                            </span>
+                                        </td>
+                                        <td></td>
+                                        <td class="text-end fw-bold text-dark">@income.Amount.ToString("N2")</td>
+                                    </tr>
+                                }
+                            }
+
+                            @if (day.OfferingTotal > 0 || day.TithesTotal > 0 || day.SolomonTotal > 0)
                             {
                                 <tr>
-                                    <td class="ps-4 text-secondary">
-                                        @if (income.SourceName == "Sunday Envelopes")
-                                        {
-                                            <strong>@income.SourceName</strong>
-                                        }
-                                        else
-                                        {
-                                            @income.SourceName
-                                        }
-                                        <span class="text-muted small fst-italic ms-1">
-                                            @if (!string.IsNullOrEmpty(income.NoteDetail) && income.SourceName != "Sunday Envelopes")
-                                            {
-                                                @($"({income.NoteDetail})")
-                                            }
-                                        </span>
+                                    <td colspan="3" class="ps-md-4 pe-md-4 py-2">
+                                        <div class="card border mb-3 mt-1 shadow-sm" style="min-width: 300px;">
+                                            <div class="card-header bg-primary py-1 px-2 border-bottom">
+                                                <small class="fw-bold text-white text-uppercase" style="font-size: 0.7rem;">1. Giving Breakdown (Envelopes)</small>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <table class="table table-sm table-borderless align-middle mb-0 text-center" style="font-size: 0.85rem;">
+                                                    <thead class="bg-primary text-white small border-bottom">
+                                                        <tr>
+                                                            <th class="py-1">Tithes</th>
+                                                            <th class="py-1">Offering</th>
+                                                            <th class="py-1">Solomon</th>
+                                                            <th class="border-start py-1">TOTAL</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td class="fw-bold text-dark py-2">₱@day.TithesTotal.ToString("N0")</td>
+                                                            <td class="fw-bold text-dark py-2">₱@day.OfferingOnlyTotal.ToString("N0")</td>
+                                                            <td class="fw-bold text-primary py-2">₱@day.SolomonTotal.ToString("N0")</td>
+                                                            <td class="fw-bold text-success border-start py-2 table-active">₱@((day.TithesTotal + day.OfferingOnlyTotal + day.SolomonTotal).ToString("N0"))</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <div class="card-header bg-light py-1 px-2 border-top border-bottom">
+                                                <small class="fw-bold text-muted text-uppercase" style="font-size: 0.7rem;">2. Physical Cash Count</small>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <table class="table table-sm table-striped mb-0" style="font-size: 0.8rem;">
+                                                    <thead class="small text-muted">
+                                                        <tr>
+                                                            <th class="ps-3 py-1">Denomination</th>
+                                                            <th class="text-center py-1">Qty</th>
+                                                            <th class="text-end pe-3 py-1">Total</th>
+                                                            <th class="text-center py-1">Notes</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var off in day.OfferingBreakdown)
+                                                        {
+                                                            <tr>
+                                                                <td class="ps-3 fw-bold">@off.Denomination</td>
+                                                                <td class="text-center text-muted">@off.Quantity</td>
+                                                                <td class="text-end pe-3 fw-bold">₱@off.Total.ToString("N0")</td>
+                                                                <td class="text-center small text-muted fst-italic">@off.Notes</td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                    <tfoot class="border-top">
+                                                        <tr>
+                                                            <td colspan="2" class="text-end small text-muted pe-2 pt-2 fw-bold">Total Cash:</td>
+                                                            <td class="text-end pe-3 fw-bold text-dark pt-2">₱@day.OfferingTotal.ToString("N0")</td>
+                                                            <td></td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td></td>
-                                    <td class="text-end fw-bold text-dark">@income.Amount.ToString("N2")</td>
                                 </tr>
                             }
-                        }
 
-                        @if (day.OfferingTotal > 0 || day.TithesTotal > 0 || day.SolomonTotal > 0)
-                        {
-                            <tr>
-                                <td colspan="3" class="ps-4 pe-4 py-2">
-                                    <div class="card border mb-3 mt-1 shadow-sm">
-                                        <div class="card-header bg-primary py-1 px-2 border-bottom">
-                                            <small class="fw-bold text-white text-uppercase" style="font-size: 0.7rem;">1. Giving Breakdown (Envelopes)</small>
-                                        </div>
-                                        <div class="card-body p-0">
-                                            <table class="table table-sm table-borderless align-middle mb-0 text-center" style="font-size: 0.85rem;">
-                                                <thead class="bg-primary text-white small border-bottom">
-                                                    <tr>
-                                                        <th class="py-1">Tithes</th>
-                                                        <th class="py-1">Offering</th>
-                                                        <th class="py-1">Solomon</th>
-                                                        <th class="border-start py-1">TOTAL</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr>
-                                                        <td class="fw-bold text-dark py-2">₱@day.TithesTotal.ToString("N0")</td>
-                                                        <td class="fw-bold text-dark py-2">₱@day.OfferingOnlyTotal.ToString("N0")</td>
-                                                        <td class="fw-bold text-primary py-2">₱@day.SolomonTotal.ToString("N0")</td>
-                                                        <td class="fw-bold text-success border-start py-2 table-active">₱@((day.TithesTotal + day.OfferingOnlyTotal + day.SolomonTotal).ToString("N0"))</td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
+                            @if (day.Expenses.Any())
+                            {
+                                <tr><td colspan="3" class="fw-bold text-danger small text-uppercase mt-2 pt-3 pb-1"><i class="bi bi-arrow-up-circle-fill me-1"></i> Expenses</td></tr>
+                                @foreach (var exp in day.Expenses)
+                                {
+                                    <tr>
+                                        <td class="ps-md-4 ps-2 text-secondary text-wrap" style="max-width: 200px;">@exp.Description</td>
+                                        <td class="text-muted small fst-italic text-end pe-3">(@exp.PaidFrom)</td>
+                                        <td class="text-end text-danger fw-bold">-@exp.Amount.ToString("N2")</td>
+                                    </tr>
+                                }
+                            }
 
-                                        <div class="card-header bg-light py-1 px-2 border-top border-bottom">
-                                            <small class="fw-bold text-muted text-uppercase" style="font-size: 0.7rem;">2. Physical Cash Count (Denominations)</small>
-                                        </div>
-                                        <div class="card-body p-0">
-                                            <table class="table table-sm table-striped mb-0" style="font-size: 0.8rem;">
-                                                <thead class="small text-muted">
-                                                    <tr>
-                                                        <th class="ps-3 py-1">Denomination</th>
-                                                        <th class="text-center py-1">Qty</th>
-                                                        <th class="text-end pe-3 py-1">Total</th>
-                                                        <th class="text-center py-1">Notes</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @foreach (var off in day.OfferingBreakdown)
-                                                    {
-                                                        <tr>
-                                                            <td class="ps-3 fw-bold">@off.Denomination</td>
-                                                            <td class="text-center text-muted">@off.Quantity</td>
-                                                            <td class="text-end pe-3 fw-bold">₱@off.Total.ToString("N0")</td>
-                                                            <td class="text-center small text-muted fst-italic">@off.Notes</td>
-                                                        </tr>
-                                                    }
-                                                </tbody>
-                                                <tfoot class="border-top">
-                                                    <tr>
-                                                        <td colspan="2" class="text-end small text-muted pe-2 pt-2 fw-bold">Total Cash:</td>
-                                                        <td class="text-end pe-3 fw-bold text-dark pt-2">₱@day.OfferingTotal.ToString("N0")</td>
-                                                        <td></td>
-                                                    </tr>
-                                                </tfoot>
-                                            </table>
-                                        </div>
-                                    </div>
+                            <tr class="border-top border-secondary">
+                                <td colspan="2" class="text-end small fw-bold pt-2 text-dark">NET CHANGE:</td>
+                                <td class="text-end fw-bold pt-2 fs-6">
+                                    @if (day.NetChange >= 0)
+                                    {
+                                        <span class="text-primary">+@day.NetChange.ToString("N2")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger">@day.NetChange.ToString("N2")</span>
+                                    }
                                 </td>
                             </tr>
-                        }
-
-                        @if (day.Expenses.Any())
-                        {
-                            <tr><td colspan="3" class="fw-bold text-danger small text-uppercase mt-2 pt-3 pb-1"><i class="bi bi-arrow-up-circle-fill me-1"></i> Expenses</td></tr>
-                            @foreach (var exp in day.Expenses)
-                            {
-                                <tr>
-                                    <td class="ps-4 text-secondary">@exp.Description</td>
-                                    <td class="text-muted small fst-italic text-end pe-3">(@exp.PaidFrom)</td>
-                                    <td class="text-end text-danger fw-bold">-@exp.Amount.ToString("N2")</td>
-                                </tr>
-                            }
-                        }
-
-                        <tr class="border-top border-secondary">
-                            <td colspan="2" class="text-end small fw-bold pt-2 text-dark">NET CHANGE (@day.Date.ToString("MMM dd")):</td>
-                            <td class="text-end fw-bold pt-2 fs-6">
-                                @if (day.NetChange >= 0)
-                                {
-                                    <span class="text-primary">+@day.NetChange.ToString("N2")</span>
-                                }
-                                else
-                                {
-                                    <span class="text-danger">@day.NetChange.ToString("N2")</span>
-                                }
-                            </td>
-                        </tr>
-                    </table>
+                        </table>
+                    </div>
                 </div>
             </div>
         }
     </div>
 
-    <div class="mt-5 p-4 bg-light rounded border border-secondary border-opacity-25">
+    <div class="mt-5 p-3 p-md-4 bg-light rounded border border-secondary border-opacity-25">
         <h5 class="text-uppercase fw-bold mb-3 text-primary border-bottom pb-2"><i class="bi bi-calculator me-2"></i>Cash Flow Summary</h5>
-        <table class="table table-sm table-borderless" style="font-size: 0.95rem;">
-            <thead class="text-muted small text-uppercase border-bottom">
-                <tr><th style="width: 40%">Description</th><th class="text-end" style="width: 20%">Income</th><th class="text-end" style="width: 20%">Expense</th><th class="text-end" style="width: 20%">Balance</th></tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="fw-bold text-dark ps-2 py-2">Beginning Balance</td>
-                    <td class="text-end text-muted py-2">-</td>
-                    <td class="text-end text-muted py-2">-</td>
-                    <td class="text-end fw-bold py-2">₱@Model.BeginningBalance.ToString("N2")</td>
-                </tr>
-                @foreach (var day in Model.Report.Days)
-                {
-                    <tr style="border-bottom: 1px dashed #ccc;">
-                        <td class="ps-2 py-2"><span class="fw-bold text-dark">@day.Date.ToString("MMM dd")</span> <span class="text-muted small">&mdash; @(string.IsNullOrEmpty(day.Notes) ? "Activity" : day.Notes)</span></td>
-                        <td class="text-end py-2">@(day.TotalIncomeForDay > 0 ? Html.Raw($"<span class='text-success fw-bold'>{day.TotalIncomeForDay:N2}</span>") : Html.Raw("<span class='text-muted small opacity-50'>-</span>"))</td>
-                        <td class="text-end py-2">@(day.TotalExpenseForDay > 0 ? Html.Raw($"<span class='text-danger'>({day.TotalExpenseForDay:N2})</span>") : Html.Raw("<span class='text-muted small opacity-50'>-</span>"))</td>
-                        <td class="text-end fw-bold py-2">@(day.NetChange >= 0 ? Html.Raw($"<span class='text-primary'>+{day.NetChange:N2}</span>") : Html.Raw($"<span class='text-danger'>{day.NetChange:N2}</span>"))</td>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-borderless text-nowrap" style="font-size: 0.95rem;">
+                <thead class="text-muted small text-uppercase border-bottom">
+                    <tr>
+                        <th style="min-width: 150px;">Description</th>
+                        <th class="text-end">Income</th>
+                        <th class="text-end">Expense</th>
+                        <th class="text-end">Balance</th>
                     </tr>
-                }
-                <tr class="border-top border-dark border-2 bg-white">
-                    <td class="pt-3 h5 fw-bold text-dark ps-2">ENDING BALANCE</td>
-                    <td class="pt-3 text-end text-success fw-bold">@Model.Report.TotalIncome.ToString("N0")</td>
-                    <td class="pt-3 text-end text-danger fw-bold">(@Model.Report.TotalExpenses.ToString("N0"))</td>
-                    <td class="pt-3 text-end h3 fw-bold text-primary">₱@((Model.BeginningBalance + Model.Report.NetCashFlow).ToString("N2"))</td>
-                </tr>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="fw-bold text-dark ps-2 py-2">Beginning Balance</td>
+                        <td class="text-end text-muted py-2">-</td>
+                        <td class="text-end text-muted py-2">-</td>
+                        <td class="text-end fw-bold py-2">₱@Model.BeginningBalance.ToString("N2")</td>
+                    </tr>
+                    @foreach (var day in Model.Report.Days)
+                    {
+                        <tr style="border-bottom: 1px dashed #ccc;">
+                            <td class="ps-2 py-2">
+                                <span class="fw-bold text-dark">@day.Date.ToString("MMM dd")</span>
+                                <span class="text-muted small d-none d-sm-inline">&mdash; @(string.IsNullOrEmpty(day.Notes) ? "Activity" : day.Notes)</span>
+                            </td>
+                            <td class="text-end py-2">@(day.TotalIncomeForDay > 0 ? Html.Raw($"<span class='text-success fw-bold'>{day.TotalIncomeForDay:N2}</span>") : Html.Raw("<span class='text-muted small opacity-50'>-</span>"))</td>
+                            <td class="text-end py-2">@(day.TotalExpenseForDay > 0 ? Html.Raw($"<span class='text-danger'>({day.TotalExpenseForDay:N2})</span>") : Html.Raw("<span class='text-muted small opacity-50'>-</span>"))</td>
+                            <td class="text-end fw-bold py-2">@(day.NetChange >= 0 ? Html.Raw($"<span class='text-primary'>+{day.NetChange:N2}</span>") : Html.Raw($"<span class='text-danger'>{day.NetChange:N2}</span>"))</td>
+                        </tr>
+                    }
+                    <tr class="border-top border-dark border-2 bg-white">
+                        <td class="pt-3 h5 fw-bold text-dark ps-2">ENDING BALANCE</td>
+                        <td class="pt-3 text-end text-success fw-bold">@Model.Report.TotalIncome.ToString("N0")</td>
+                        <td class="pt-3 text-end text-danger fw-bold">(@Model.Report.TotalExpenses.ToString("N0"))</td>
+                        <td class="pt-3 text-end h3 fw-bold text-primary">₱@((Model.BeginningBalance + Model.Report.NetCashFlow).ToString("N2"))</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
         <div class="row mt-3 g-2 justify-content-end">
-            <div class="col-auto">
-                <div class="badge bg-white text-dark border p-3 shadow-sm text-start" style="min-width: 180px;">
+            <div class="col-12 col-md-auto">
+                <div class="badge bg-white text-dark border p-3 shadow-sm text-start w-100" style="min-width: 180px;">
                     <div class="text-muted text-uppercase small mb-1">Cash On Hand</div>
                     <div class="text-success fw-bold fs-5">₱@((Model.BeginningBalance + Model.Report.NetMovement_COH).ToString("N2"))</div>
                     <div class="small text-muted fst-italic" style="font-size: 0.7rem;">(Tithes, Offering, Operating)</div>
                 </div>
             </div>
-            <div class="col-auto">
-                <div class="badge bg-white text-dark border p-3 shadow-sm text-start" style="min-width: 200px;">
+            <div class="col-12 col-md-auto">
+                <div class="badge bg-white text-dark border p-3 shadow-sm text-start w-100" style="min-width: 200px;">
                     <div class="text-muted text-uppercase small mb-1">Total Pledges</div>
                     <div class="text-primary fw-bold fs-5 mb-2">₱@Model.Report.NetMovement_Pledge.ToString("N2")</div>
 
@@ -261,7 +286,7 @@
     </div>
 
     <div class="row mt-5 pt-5 text-center">
-        <div class="col-6 offset-3">
+        <div class="col-10 offset-1 col-md-6 offset-md-3">
             <div class="border-top border-dark w-100 mx-auto pt-3">
                 <p class="mb-0 fw-bold text-uppercase">Keneth James E. Rivera</p>
                 <small class="text-muted text-uppercase" style="letter-spacing: 1px;">PFC Olivarez Finance</small>

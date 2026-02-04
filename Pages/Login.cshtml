@@ -16,62 +16,81 @@
 
     <style>
         body {
-            /* Set the background image */
-            background: url('/images/login-bg.jpg') no-repeat center center fixed;
+            /* Changed to 'scroll' for better mobile support */
+            background: url('/images/login-bg.jpg') no-repeat center center scroll;
             background-size: cover;
-            height: 100vh;
+            /* use min-height to handle mobile keyboard popups */
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
         }
 
-        /* The dark overlay to make text readable */
+        /* The dark overlay */
         .overlay {
-            position: absolute;
+            position: fixed; /* Fixed covers screen even when scrolling */
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 50, 100, 0.65); /* Blue tint overlay */
+            background: rgba(0, 50, 100, 0.65);
             z-index: 1;
         }
 
         /* The Login Card */
         .login-card {
             position: relative;
-            z-index: 2; /* Sits on top of overlay */
-            width: 100%;
-            max-width: 400px;
+            z-index: 2;
+            /* MOBILE WIDTH SETTINGS */
+            width: 85%; /* Sets card to 85% of screen width on mobile */
+            max-width: 400px; /* Stops it from getting too big on desktop */
+
             border-radius: 15px;
             border: none;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            background: rgba(255, 255, 255, 0.95); /* Slightly transparent white */
-            backdrop-filter: blur(10px); /* Glass blur effect */
-            overflow: hidden;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            overflow: visible; /* Changed to visible so logo can overlap if needed */
         }
 
-        .logo-container {
-            width: 100px;
-            height: 100px;
-            margin: -50px auto 20px; /* Pulls logo up */
-            background: white;
-            border-radius: 50%;
-            padding: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        /* Responsive tweak: If you strictly want 60% on mobile, uncomment below
+                   But warning: inputs will be very small on phones! */
+        /* @@media (max-width: 576px) {
+            .login-card
+
+        {
+            width: 60%;
         }
 
-        .logo-img {
-            max-width: 100%;
-            height: auto;
         }
+
+        */
 
         .form-control:focus {
             border-color: #0d6efd;
             box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        }
+
+        /* Smooth animation for entry */
+        .animate-fade-in {
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        @@keyframes fadeInUp {
+            from
+
+        {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
         }
     </style>
 </head>
@@ -80,45 +99,43 @@
 
     <div class="overlay"></div>
 
-    <div class="container px-4">
-        <div class="login-card mx-auto p-4 pt-5 animate-fade-in">
+    <div class="login-card p-4 pt-5 animate-fade-in">
 
-            <div class="text-center mb-4">
-                <img src="~/images/pfc-logo.jpg"
-                     alt="PFC Logo"
-                     class="rounded-circle shadow-sm mb-3"
-                     style="width: 110px; height: 110px; object-fit: cover; border: 3px solid white;">
+        <div class="text-center mb-4">
+            <img src="~/images/pfc-logo.jpg"
+                 alt="PFC Logo"
+                 class="rounded-circle shadow-sm mb-3"
+                 style="width: 110px; height: 110px; object-fit: cover; border: 3px solid white;">
 
-                <h4 class="fw-bold text-dark mb-0">Stewardship Ministry</h4>
-                <small class="text-muted text-uppercase fw-bold" style="letter-spacing: 1px;">Pinagpala Family Center</small>
+            <h4 class="fw-bold text-dark mb-0">Stewardship Ministry</h4>
+            <small class="text-muted text-uppercase fw-bold" style="letter-spacing: 1px;">Pinagpala Family Center</small>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger text-center py-2 shadow-sm border-0">
+                <i class="bi bi-exclamation-circle-fill me-1"></i> @Model.ErrorMessage
+            </div>
+        }
+
+        <form method="post">
+            <div class="form-floating mb-3">
+                <input type="text" asp-for="Username" class="form-control" id="floatingInput" placeholder="Username" required autofocus />
+                <label for="floatingInput" class="text-muted">Username</label>
             </div>
 
-            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-            {
-                <div class="alert alert-danger text-center py-2 shadow-sm border-0">
-                    <i class="bi bi-exclamation-circle-fill me-1"></i> @Model.ErrorMessage
-                </div>
-            }
-
-            <form method="post">
-                <div class="form-floating mb-3">
-                    <input type="text" asp-for="Username" class="form-control" id="floatingInput" placeholder="Username" required autofocus />
-                    <label for="floatingInput" class="text-muted">Username</label>
-                </div>
-
-                <div class="form-floating mb-4">
-                    <input type="password" asp-for="Password" class="form-control" id="floatingPassword" placeholder="Password" required />
-                    <label for="floatingPassword" class="text-muted">Password</label>
-                </div>
-
-                <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" style="border-radius: 10px;">
-                    SIGN IN
-                </button>
-            </form>
-
-            <div class="text-center mt-4 mb-2">
-                <small class="text-muted opacity-75">Authorized Personel Only</small>
+            <div class="form-floating mb-4">
+                <input type="password" asp-for="Password" class="form-control" id="floatingPassword" placeholder="Password" required />
+                <label for="floatingPassword" class="text-muted">Password</label>
             </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" style="border-radius: 10px;">
+                SIGN IN
+            </button>
+        </form>
+
+        <div class="text-center mt-4 mb-2">
+            <small class="text-muted opacity-75">Authorized Personnel Only</small>
         </div>
     </div>
 
