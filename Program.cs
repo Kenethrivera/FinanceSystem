@@ -29,6 +29,7 @@ namespace FinanceSystem
                     options.ExpireTimeSpan = TimeSpan.FromHours(8);
                 });
 
+
             var app = builder.Build();
             // Creates a scope to safely resolve the service before the app starts.
             using (var scope = app.Services.CreateScope())
