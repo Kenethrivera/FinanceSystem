@@ -118,11 +118,12 @@
                                                     <i class="bi bi-pencil-fill"></i>
                                                 </button>
 
-                                                <form method="post" asp-page-handler="Cancel" asp-route-id="@item.Id" class="d-inline" onsubmit="return confirm('Cancel this request?');">
-                                                    <button type="submit" class="btn btn-sm btn-light text-danger border" title="Cancel">
-                                                        <i class="bi bi-trash-fill"></i>
-                                                    </button>
-                                                </form>
+                                                <button class="btn btn-sm btn-light text-danger border"
+                                                        title="Cancel"
+                                                        onclick="openDeleteModal(@item.Id, '@item.Title')">
+                                                    <i class="bi bi-trash-fill"></i>
+                                                </button>
+
                                             }
                                             else
                                             {
@@ -187,6 +188,42 @@
     </div>
 </div>
 
+<div class="modal fade" id="deleteRequestModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold text-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Cancel Request
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <p class="mb-1">Are you sure you want to cancel this request?</p>
+                <p class="fw-bold text-dark mb-0" id="deleteRequestTitle"></p>
+                <p class="text-muted small mt-2">
+                    This action cannot be undone.
+                </p>
+            </div>
+
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                    Keep Request
+                </button>
+
+                <form method="post" asp-page-handler="Cancel">
+                    <input type="hidden" name="id" id="deleteRequestId" />
+                    <button type="submit" class="btn btn-danger fw-bold">
+                        Yes, Cancel It
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <script>
     // Initialize Tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -200,11 +237,21 @@
         document.getElementById('editAmount').value = amount;
 
         // Date Fix: Directly assign the yyyy-MM-dd string.
-        // This avoids JS Date object conversion which causes timezone issues.
         document.getElementById('editDate').value = dateString;
 
         document.getElementById('editReason').value = reason;
 
         new bootstrap.Modal(document.getElementById('editRequestModal')).show();
+    }
+</script>
+
+<script>
+    function openDeleteModal(id, title) {
+        document.getElementById('deleteRequestId').value = id;
+        document.getElementById('deleteRequestTitle').innerText = title;
+
+        new bootstrap.Modal(
+            document.getElementById('deleteRequestModal')
+        ).show();
     }
 </script>

@@ -3,6 +3,60 @@
 @{
     ViewData["Title"] = "Transaction Details";
 }
+<style>
+    #imageLightbox .modal-body {
+    height: 100vh;
+    }
+
+    #imageLightbox .modal-image {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    margin: auto;
+    display: block;
+    }
+
+    #imageLightbox .modal-content {
+    background-color: rgba(0, 0, 0, 0.95) !important;
+    }
+
+    #imageLightbox .modal-body img {
+    border-radius: 4px;
+    transition: transform 0.3s ease;
+    }
+
+    #imageLightbox img {
+    max-width: 100%;
+    max-height: 100vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    margin: auto;
+    display: block;
+    touch-action: manipulation;
+    }
+    .liquidation-thumb {
+    max-height: 250px;
+    width: auto;
+    object-fit: contain;
+    cursor: zoom-in;
+    }
+
+    @@media (max-width: 768px) {
+    #imageLightbox .modal-body
+
+    {
+    padding: 10px !important;
+    }
+
+    }
+
+    body.modal-open {
+    overflow: hidden;
+    }
+</style>
 
 <div class="container mt-4" style="max-width: 1000px;">
 
@@ -32,7 +86,7 @@
                             <form method="post" asp-page-handler="ResolveFlag" asp-route-id="@Model.Day.Id" class="mt-2">
                                 <div class="input-group">
                                     <input type="text" name="adminResponse" class="form-control border-warning"
-                                           placeholder="Write your explanation here..." required />
+                                    placeholder="Write your explanation here..." required />
                                     <button class="btn btn-warning text-dark fw-bold">✅ Resolve & Reply</button>
                                 </div>
                             </form>
@@ -46,6 +100,13 @@
             </div>
         }
     }
+    @if (Model.IsMonthLocked)
+{
+    <div class="alert alert-success">
+        <strong><i class="bi bi-patch-check-fill"></i> Final and Audited</strong><br />
+        This record belongs to a locked month. It can no longer be edited, deleted, or flagged.
+    </div>
+}
 
     @if ((User.IsInRole("Admin") || User.IsInRole("Auditor")) && !string.IsNullOrEmpty(Model.Day.FlagComment) && !string.IsNullOrEmpty(Model.Day.FlagResponse))
     {
@@ -197,8 +258,7 @@
         </div>
     </div>
 
-    @if (Model.IsMotherChurchDay)
-    {
+    
         <div class="card border-0 shadow-sm mt-4">
             <div class="card-body p-4">
                 <h6 class="fw-bold text-warning text-dark mb-3">
@@ -208,36 +268,40 @@
                     <div class="col-md-6">
                         @if (Model.Liquidation == null)
                         {
-                            <div class="text-center py-4 bg-light rounded border border-dashed">
-                                <i class="bi bi-camera display-4 text-muted mb-3 d-block"></i>
-                                <p class="mb-3 text-muted">Upload photo of signed form</p>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <div class="text-center py-4 bg-light rounded border border-dashed">
+                                    <i class="bi bi-camera display-4 text-muted mb-3 d-block"></i>
+                                    <p class="mb-3 text-muted">Upload photo of signed form</p>
 
-                                <form method="post" enctype="multipart/form-data" asp-page-handler="UploadLiquidation" class="px-4">
-                                    <input type="hidden" name="id" value="@Model.Day.Id" />
-                                    <input type="file" name="uploadFile" class="form-control mb-2" accept="image/*" required />
-                                    <button class="btn btn-dark w-100">Upload Report</button>
-                                </form>
-                            </div>
+                                    <form method="post" enctype="multipart/form-data" asp-page-handler="UploadLiquidation" class="px-4">
+                                        <input type="hidden" name="id" value="@Model.Day.Id" />
+                                        <input type="file" name="uploadFile" class="form-control mb-2" accept="image/*" required />
+                                        <button class="btn btn-dark w-100">Upload Report</button>
+                                    </form>
+                                </div>
+                            }
                         }
                         else
                         {
                             <div class="text-center">
-                                <a href="https://zqaiekguutvjnjnsbflp.supabase.co/storage/v1/object/public/liquidation-proofs/@Model.Liquidation.ImagePath" target="_blank">
-                                    <img src="https://zqaiekguutvjnjnsbflp.supabase.co/storage/v1/object/public/liquidation-proofs/@Model.Liquidation.ImagePath"
-                                         class="img-fluid rounded border shadow-sm"
-                                         style="max-height: 250px; width: auto; cursor: zoom-in;"
-                                         title="Click to view full size" />
-                                </a>
-                                <p class="text-muted small mt-2">
-                                    <i class="bi bi-check-circle-fill text-success me-1"></i> Uploaded on @Model.Liquidation.CreatedAt.ToString("MMM dd, yyyy")
-                                </p>
+                                <div class="text-center">
+                                    <button type="button" class="btn p-0 border-0 shadow-sm rounded overflow-hidden" data-bs-toggle="modal" data-bs-target="#imageLightbox">
+                                        <img src="https://zqaiekguutvjnjnsbflp.supabase.co/storage/v1/object/public/liquidation-proofs/@Model.Liquidation.ImagePath"
+                                             class="img-fluid liquidation-thumb shadow-sm"
+                                             alt="Liquidation Proof" />
+                                    </button>
+                                    <p class="text-muted small mt-2">
+                                        <i class="bi bi-check-circle-fill text-success me-1"></i> File Uploaded
+                                    </p>
+                                </div>
                             </div>
                         }
                     </div>
                 </div>
             </div>
         </div>
-    }
+    
 
     @if (User.IsInRole("Auditor") && string.IsNullOrEmpty(Model.Day.FlagComment))
     {
@@ -266,14 +330,70 @@
                     <h6 class="text-danger fw-bold mb-1">Danger Zone</h6>
                     <p class="text-muted small mb-0">Permanently delete this entire record and its transactions.</p>
                 </div>
-                <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Day.Id"
-                      onsubmit="return confirm('Are you sure you want to delete this record? This cannot be undone.');">
-                    <button type="submit" class="btn btn-outline-danger btn-sm fw-bold px-3">
-                        <i class="bi bi-trash me-1"></i> Delete Record
-                    </button>
-                </form>
+
+                <button type="button" class="btn btn-outline-danger btn-sm fw-bold px-3" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">
+                    <i class="bi bi-trash me-1"></i> Delete Record
+                </button>
             </div>
         </div>
+
+        <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header border-bottom-0">
+                        <h5 class="modal-title fw-bold text-dark" id="deleteConfirmModalLabel">Confirm Deletion</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center py-4">
+                        <div class="text-danger mb-3">
+                            <i class="bi bi-exclamation-octagon-fill" style="font-size: 3rem;"></i>
+                        </div>
+                        <h5 class="fw-bold">Are you sure?</h5>
+                        <p class="text-muted mb-0">You are about to delete the record for <strong>@Model.Day.Activity_Date.ToString("MMMM dd, yyyy")</strong>.</p>
+                        <p class="text-danger small fw-bold mt-2">This action cannot be undone.</p>
+                    </div>
+                    <div class="modal-footer border-top-0 d-flex justify-content-center pb-4">
+                        <button type="button" class="btn btn-light px-4 fw-bold" data-bs-dismiss="modal">No, Keep it</button>
+
+                        <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Day.Id">
+                            <button type="submit" class="btn btn-danger px-4 fw-bold shadow-sm">
+                                Yes, Delete Permanently
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     }
+
+
+        @if (Model.Liquidation != null)
+        {
+            <div class="modal fade" id="imageLightbox" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-fullscreen modal-dialog-centered">
+                    <div class="modal-content bg-black border-0">
+                        <div class="position-absolute top-0 end-0 p-3" style="z-index: 1055;">
+                            <button type="button" class="btn btn-link text-white text-decoration-none fs-2" data-bs-dismiss="modal">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>  
+
+                        <div class="modal-body d-flex align-items-center justify-content-center p-0">
+                            <img src="https://zqaiekguutvjnjnsbflp.supabase.co/storage/v1/object/public/liquidation-proofs/@Model.Liquidation.ImagePath"
+                                 class="img-fluid modal-image shadow-lg"/>
+                        </div>
+
+                        <div class="modal-footer border-0 position-absolute bottom-0 w-100 justify-content-center bg-dark bg-opacity-50">
+                            <p class="text-white small mb-0">
+                                Liquidation Proof - @Model.Day.Activity_Date.ToString("MMM dd, yyyy")
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+    
 
 </div>

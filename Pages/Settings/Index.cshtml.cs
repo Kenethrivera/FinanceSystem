@@ -51,7 +51,7 @@ namespace FinanceSystem.Pages.Settings
             await _supabase.InitializeAsync(true);
             var newCat = new Category { Name = name, Type = "Income" }; // Set Type to Income
             await _supabase.Client.From<Category>().Insert(newCat);
-            return RedirectToPage();
+            return RedirectToPage("/Settings/Index");
         }
 
         // --- HANDLER: ADD EXPENSE CATEGORY ---
@@ -60,7 +60,7 @@ namespace FinanceSystem.Pages.Settings
             await _supabase.InitializeAsync(true);
             var newCat = new Category { Name = name, Type = "Expenses" }; // Set Type to Expenses
             await _supabase.Client.From<Category>().Insert(newCat);
-            return RedirectToPage();
+            return RedirectToPage("/Settings/Index");
         }
 
         // --- HANDLER: ADD WALLET ---
@@ -69,7 +69,7 @@ namespace FinanceSystem.Pages.Settings
             await _supabase.InitializeAsync(true);
             var newSource = new Source { Name = name, Description = !string.IsNullOrEmpty(description) ? description : "User Added Wallet" };
             await _supabase.Client.From<Source>().Insert(newSource);
-            return RedirectToPage();
+            return RedirectToPage("/Settings/Index");
         }
 
         // --- DELETE HANDLERS
@@ -77,14 +77,14 @@ namespace FinanceSystem.Pages.Settings
         {
             await _supabase.InitializeAsync(true);
             await _supabase.Client.From<Category>().Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id).Delete();
-            return RedirectToPage();
+            return RedirectToPage("/Settings/Index");
         }
 
         public async Task<IActionResult> OnPostDeleteSourceAsync(int id)
         {
             await _supabase.InitializeAsync(true);
             await _supabase.Client.From<Source>().Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id).Delete();
-            return RedirectToPage();
+            return RedirectToPage("/Settings/Index");
         }
 
     }

@@ -8,10 +8,12 @@ namespace FinanceSystem.Pages.FinancialDays
     public class DetailsModel : PageModel
     {
         private readonly SupabaseService _supabase;
+        private readonly MonthLockService _monthLockService;
 
-        public DetailsModel(SupabaseService supabase)
+        public DetailsModel(SupabaseService supabase, MonthLockService monthLockService)
         {
             _supabase = supabase;
+            _monthLockService = monthLockService;
         }
 
         public Financial_Day Day { get; set; }
@@ -31,6 +33,8 @@ namespace FinanceSystem.Pages.FinancialDays
         public decimal MotherChurchExpenses { get; set; }
         public decimal CashReturn { get; set; }
         public List<Expenses> MotherChurchExpenseList { get; set; } = new();
+        public bool IsMonthLocked { get; set; }
+        public MonthlyClosure? MonthClosure { get; set; }
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
@@ -44,6 +48,9 @@ namespace FinanceSystem.Pages.FinancialDays
 
             if (response == null) return NotFound();
             Day = response;
+
+            IsMonthLocked = await _monthLockService.IsMonthLockedAsync(Day.Activity_Date);
+            MonthClosure = await _monthLockService.GetMonthClosureAsync(Day.Activity_Date.Month, Day.Activity_Date.Year);
 
             // 2. Get Related Data
             Budgets = (await _supabase.Client.From<Budget>().Filter("financial_day_id", Supabase.Postgrest.Constants.Operator.Equals, id).Get()).Models;
@@ -91,6 +98,21 @@ namespace FinanceSystem.Pages.FinancialDays
 
             await _supabase.InitializeAsync(true);
 
+            var day = await _supabase.Client
+                .From<Financial_Day>()
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id)
+                .Single();
+
+            if (day == null)
+                return NotFound();
+
+            bool isLocked = await _monthLockService.IsMonthLockedAsync(day.Activity_Date);
+            if (isLocked)
+            {
+                TempData["ErrorMessage"] = "This month is already final and audited. Upload is no longer allowed.";
+                return RedirectToPage(new { id = id });
+            }
+
             using var memoryStream = new MemoryStream();
             await uploadFile.CopyToAsync(memoryStream);
             var bytes = memoryStream.ToArray();
@@ -119,22 +141,26 @@ namespace FinanceSystem.Pages.FinancialDays
                 .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id)
                 .Get()).Models.FirstOrDefault();
 
-            string logDetails = "Deleted Financial Day ID: " + id;
+            if (dayToDelete == null)
+                return NotFound();
 
-            if (dayToDelete != null)
+            bool isLocked = await _monthLockService.IsMonthLockedAsync(dayToDelete.Activity_Date);
+            if (isLocked)
             {
-                logDetails = $"Deleted Entry for {dayToDelete.Activity_Date:MMM dd, yyyy}";
+                TempData["ErrorMessage"] = "This month is already final and audited. Records can no longer be deleted.";
+                return RedirectToPage(new { id = id });
             }
 
-            // Delete all related records
+            string logDetails = $"Deleted Entry for {dayToDelete.Activity_Date:MMM dd, yyyy}";
+
             await _supabase.Client.From<Budget>().Filter("financial_day_id", Supabase.Postgrest.Constants.Operator.Equals, id).Delete();
             await _supabase.Client.From<Expenses>().Filter("financial_day_id", Supabase.Postgrest.Constants.Operator.Equals, id).Delete();
             await _supabase.Client.From<Offering>().Filter("financial_day_id", Supabase.Postgrest.Constants.Operator.Equals, id).Delete();
-            await _supabase.Client.From<MemberGiving>().Filter("financial_day_id", Supabase.Postgrest.Constants.Operator.Equals, id).Delete(); // NEW
+            await _supabase.Client.From<MemberGiving>().Filter("financial_day_id", Supabase.Postgrest.Constants.Operator.Equals, id).Delete();
             await _supabase.Client.From<LiquidationReport>().Filter("financial_day_id", Supabase.Postgrest.Constants.Operator.Equals, id).Delete();
 
             await _supabase.Client.From<Financial_Day>().Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id).Delete();
-            await _supabase.LogActvity(User.Identity.Name, "DELETE", logDetails);
+            await _supabase.LogActvity(User.Identity?.Name, "DELETE", logDetails);
 
             return RedirectToPage("/Index");
         }
@@ -148,49 +174,78 @@ namespace FinanceSystem.Pages.FinancialDays
                 .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id)
                 .Single();
 
-            if (day != null)
-            {
-                day.Notes = newNotes;
-                day.Activity_Date = day.Activity_Date.Date.AddHours(12);
-                await _supabase.Client.From<Financial_Day>().Update(day);
+            if (day == null)
+                return NotFound();
 
-                string logDetail = $"Updated Notes for {day.Activity_Date:MMM dd}. Notes: '{newNotes}'";
-                await _supabase.LogActvity(User.Identity.Name, "UPDATE", logDetail);
+            bool isLocked = await _monthLockService.IsMonthLockedAsync(day.Activity_Date);
+            if (isLocked)
+            {
+                TempData["ErrorMessage"] = "This month is already final and audited. Notes can no longer be edited.";
+                return RedirectToPage(new { id = id });
             }
 
-            return RedirectToPage("/Index"); // Or back to Details
+            day.Notes = newNotes;
+            day.Activity_Date = day.Activity_Date.Date.AddHours(12);
+            await _supabase.Client.From<Financial_Day>().Update(day);
+
+            string logDetail = $"Updated Notes for {day.Activity_Date:MMM dd}. Notes: '{newNotes}'";
+            await _supabase.LogActvity(User.Identity?.Name, "UPDATE", logDetail);
+
+            return RedirectToPage(new { id = id });
         }
 
         public async Task<IActionResult> OnPostFlagRecordAsync(int id, string comment)
         {
             await _supabase.InitializeAsync(true);
-            var day = await _supabase.Client.From<Financial_Day>().Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id).Single();
 
-            if (day != null)
+            var day = await _supabase.Client
+                .From<Financial_Day>()
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id)
+                .Single();
+
+            if (day == null)
+                return NotFound();
+
+            bool isLocked = await _monthLockService.IsMonthLockedAsync(day.Activity_Date);
+            if (isLocked)
             {
-                day.FlagComment = comment;
-                day.FlagResponse = null;
-                day.Activity_Date = day.Activity_Date.Date.AddHours(12);
-                await _supabase.Client.From<Financial_Day>().Update(day);
-
-                await _supabase.LogActvity(User.Identity.Name, "UPDATE", $"Flagged Entry {day.Activity_Date:MMM dd}. Issue: '{comment}'");
+                TempData["ErrorMessage"] = "This month is already final and audited. Records can no longer be flagged.";
+                return RedirectToPage(new { id = id });
             }
+
+            day.FlagComment = comment;
+            day.FlagResponse = null;
+            day.Activity_Date = day.Activity_Date.Date.AddHours(12);
+            await _supabase.Client.From<Financial_Day>().Update(day);
+
+            await _supabase.LogActvity(User.Identity?.Name, "UPDATE", $"Flagged Entry {day.Activity_Date:MMM dd}. Issue: '{comment}'");
             return RedirectToPage(new { id = id });
         }
 
         public async Task<IActionResult> OnPostResolveFlagAsync(int id, string adminResponse)
         {
             await _supabase.InitializeAsync(true);
-            var day = await _supabase.Client.From<Financial_Day>().Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id).Single();
 
-            if (day != null)
+            var day = await _supabase.Client
+                .From<Financial_Day>()
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id)
+                .Single();
+
+            if (day == null)
+                return NotFound();
+
+            bool isLocked = await _monthLockService.IsMonthLockedAsync(day.Activity_Date);
+            if (isLocked)
             {
-                day.FlagResponse = adminResponse;
-                day.Activity_Date = day.Activity_Date.Date.AddHours(12);
-                await _supabase.Client.From<Financial_Day>().Update(day);
-
-                await _supabase.LogActvity(User.Identity.Name, "UPDATE", $"Resolved Flag for {day.Activity_Date:MMM dd}. Fix: '{adminResponse}'");
+                TempData["ErrorMessage"] = "This month is already final and audited. Flags can no longer be updated.";
+                return RedirectToPage(new { id = id });
             }
+
+            day.FlagResponse = adminResponse;
+            day.Activity_Date = day.Activity_Date.Date.AddHours(12);
+            await _supabase.Client.From<Financial_Day>().Update(day);
+
+            await _supabase.LogActvity(User.Identity?.Name, "UPDATE", $"Resolved Flag for {day.Activity_Date:MMM dd}. Fix: '{adminResponse}'");
             return RedirectToPage(new { id = id });
         }
     }

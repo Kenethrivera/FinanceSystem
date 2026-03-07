@@ -327,9 +327,12 @@
                                                 <i class="bi bi-pencil-fill"></i>
                                             </button>
 
-                                            <form method="post" asp-page-handler="DeletePlan" asp-route-id="@item.Id" class="d-inline" onsubmit="return confirm('Delete this rule?');">
-                                                <button type="submit" class="btn btn-sm btn-light text-danger border"><i class="bi bi-trash"></i></button>
-                                            </form>
+                                            <button class="btn btn-sm btn-light text-danger border"
+                                                        title="Cancel"
+                                                        onclick="openDeleteModal(@item.Id, '@item.Title')">
+                                                    <i class="bi bi-trash-fill"></i>
+                                                </button>
+
                                         </td>
                                     </tr>
                                 }
@@ -380,6 +383,83 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="deletePlanModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold text-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Cancel Request
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p class="mb-1">Are you sure you want to cancel this request?</p>
+                    <p class="fw-bold text-dark mb-0" id="deleteRequestTitle"></p>
+                    <p class="text-muted small mt-2">
+                        This action cannot be undone.
+                    </p>
+                </div>
+
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                        Keep Request
+                    </button>
+
+                    <form method="post" asp-page-handler="DeletePlan">
+                        <input type="hidden" name="id" id="deletePlanId" />
+                        <button type="submit" class="btn btn-danger fw-bold">
+                            <p class="fw-bold text-dark mb-0" id="deletePlanTitle"></p>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('financeChart').getContext('2d');
+        const labels = @Json.Serialize(Model.ChartLabels);
+        const incomeData = @Json.Serialize(Model.ChartIncome);
+        const expenseData = @Json.Serialize(Model.ChartExpense);
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Income', data: incomeData, backgroundColor: '#0d6efd', borderRadius: 4 },
+                    { label: 'Expense', data: expenseData, backgroundColor: '#dc3545', borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top', align: 'end' } },
+                scales: {
+                    y: { beginAtZero: true, grid: { borderDash: [2, 2], drawBorder: false }, ticks: { callback: function(value) { return '₱' + value.toLocaleString(); } } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    </script>
+
+    <script>
+        function openDeleteModal(id, title) {
+        document.getElementById('deletePlanId').value = id;
+        document.getElementById('deletePlanTitle').innerText = title;
+
+        new bootstrap.Modal(
+            document.getElementById('deletePlanModal')
+        ).show();
+        }
+    </script>
 
     <script>
         // Shared Toggle Function
@@ -416,35 +496,5 @@
             var editModal = new bootstrap.Modal(document.getElementById('editPlanModal'));
             editModal.show();
         }
-    </script>
-}
-
-@section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        const ctx = document.getElementById('financeChart').getContext('2d');
-        const labels = @Json.Serialize(Model.ChartLabels);
-        const incomeData = @Json.Serialize(Model.ChartIncome);
-        const expenseData = @Json.Serialize(Model.ChartExpense);
-
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    { label: 'Income', data: incomeData, backgroundColor: '#0d6efd', borderRadius: 4 },
-                    { label: 'Expense', data: expenseData, backgroundColor: '#dc3545', borderRadius: 4 }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'top', align: 'end' } },
-                scales: {
-                    y: { beginAtZero: true, grid: { borderDash: [2, 2], drawBorder: false }, ticks: { callback: function(value) { return '₱' + value.toLocaleString(); } } },
-                    x: { grid: { display: false } }
-                }
-            }
-        });
     </script>
 }

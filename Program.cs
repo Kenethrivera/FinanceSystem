@@ -1,4 +1,4 @@
-using FinanceSystem.Services;
+Ôªøusing FinanceSystem.Services;
 using System;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -19,7 +19,7 @@ namespace FinanceSystem
                 options.Conventions.AllowAnonymousToPage("/Login");
                 options.Conventions.AllowAnonymousToPage("/Error");
             });
-            // Tells ASP.NET Core: ìHereís a service to share across the app, create it only once.î
+            // Tells ASP.NET Core: ‚ÄúHere‚Äôs a service to share across the app, create it only once.‚Äù
             builder.Services.AddSingleton<SupabaseService>();
 
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -28,7 +28,7 @@ namespace FinanceSystem
                     options.LoginPath = "/Login";
                     options.ExpireTimeSpan = TimeSpan.FromHours(8);
                 });
-
+            builder.Services.AddScoped<MonthLockService>();
 
             var app = builder.Build();
             // Creates a scope to safely resolve the service before the app starts.

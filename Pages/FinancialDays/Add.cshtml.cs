@@ -161,7 +161,7 @@ namespace FinanceSystem.Pages.FinancialDays
 
             await _supabase.LogActvity(User.Identity.Name, "CREATE", log);
 
-            return RedirectToPage("/Index");
+            return RedirectToPage("/FinancialDays/Add");
         }
 
         // Helper to reload dropdowns if validation fails

@@ -49,7 +49,7 @@ namespace FinanceSystem.Pages.Requests
             }
 
             await _supabase.Client.From<FinancialRequest>().Insert(RequestInput);
-            return RedirectToPage();
+            return RedirectToPage("/Requests/Index");
         }
 
         public async Task<IActionResult> OnPostUpdateAsync()
@@ -71,7 +71,7 @@ namespace FinanceSystem.Pages.Requests
 
                 await _supabase.Client.From<FinancialRequest>().Update(existing);
             }
-            return RedirectToPage();
+            return RedirectToPage("/Requests/Index");
         }
 
         public async Task<IActionResult> OnPostCancelAsync(long id)
@@ -88,7 +88,7 @@ namespace FinanceSystem.Pages.Requests
                 await _supabase.Client.From<FinancialRequest>().Where(x => x.Id == id).Delete();
             }
 
-            return RedirectToPage();
+            return RedirectToPage("/Requests/Index");
         }
     }
 }

@@ -4,6 +4,73 @@
     ViewData["Title"] = "Monthly Report";
 }
 
+<div class="mb-3">
+    @if (Model.IsLockedMonth)
+    {
+        <div class="alert alert-success shadow border-0 rounded-4 px-3 px-md-4 py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <div class="fw-bold d-flex align-items-center">
+                    <i class="bi bi-patch-check-fill me-2 fs-5"></i>
+                    FINAL AND AUDITED
+                </div>
+                <div class="small mt-1">
+                    This report is already locked and can no longer be edited, deleted, or flagged.
+                    @if (Model.MonthClosure?.LockedAt != null)
+                    {
+                        <div class="mt-1 text-muted">
+                            Locked at: @Model.MonthClosure.LockedAt.Value.ToString("MMM dd, yyyy")
+                            @if (!string.IsNullOrEmpty(Model.MonthClosure?.LockedBy))
+                            {
+                                <span> by @Model.MonthClosure.LockedBy</span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (User.IsInRole("Auditor") || User.IsInRole("Treasurer"))
+            {
+                <form method="post" asp-page-handler="UnlockMonth" class="m-0">
+                    <input type="hidden" name="month" value="@Model.Month" />
+                    <input type="hidden" name="year" value="@Model.Year" />
+                    <button type="submit" class="btn btn-outline-danger fw-bold">
+                        <i class="bi bi-unlock-fill me-1"></i> Reopen Month
+                    </button>
+                </form>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning shadow border-0 rounded-4 px-3 px-md-4 py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <div class="fw-bold d-flex align-items-center text-dark">
+                    <i class="bi bi-unlock-fill me-2 fs-5"></i>
+                    OPEN MONTH
+                </div>
+                <div class="small mt-1 text-muted">
+                    This month is still editable and reviewable.
+                </div>
+            </div>
+
+            @if (User.IsInRole("Auditor") || User.IsInRole("Treasurer"))
+            {
+                <form method="post" asp-page-handler="LockMonth" class="m-0">
+                    <input type="hidden" name="month" value="@Model.Month" />
+                    <input type="hidden" name="year" value="@Model.Year" />
+
+                    <div class="d-flex flex-column flex-md-row gap-2">
+                        <textarea name="remarks" class="form-control" placeholder="Audit remarks (optional)" style="min-width: 250px; max-width: 350px; height: 42px;"></textarea>
+                        <button type="submit" class="btn btn-success fw-bold text-nowrap">
+                            <i class="bi bi-lock-fill me-1"></i> Mark as Final
+                        </button>
+                    </div>
+                </form>
+            }
+        </div>
+    }
+</div>
+
 <div class="alert alert-info d-block d-md-none shadow-sm border-0 mb-3 rounded-3" role="alert">
     <div class="d-flex align-items-start">
         <i class="bi bi-info-circle-fill fs-4 me-3 text-info"></i>
