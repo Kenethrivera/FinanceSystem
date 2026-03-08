@@ -258,13 +258,43 @@
                         </div>
                         <div class="mb-3">
                             <label class="small fw-bold text-muted">Type</label>
-                            <select id="planType" class="form-select mb-2" onchange="togglePlanInputs('add')" asp-for="NewPlan.IsMonthly">
-                                <option value="true">Monthly (Fixed)</option>
-                                <option value="false">One-Time (Seasonal)</option>
+                            <select id="planType" class="form-select mb-2" onchange="togglePlanInputs('add')" asp-for="NewPlan.RecurrenceType">
+                                <option value="FixedDay">Fixed day every month</option>
+                                <option value="NthWeekday">Nth weekday every month</option>
+                                <option value="OneTime">One-time</option>
                             </select>
-                            <div id="monthlyInput_add">
+
+                            <div id="fixedDayInput_add">
                                 <input asp-for="NewPlan.DueDay" type="number" min="1" max="31" class="form-control" placeholder="Day of Month (e.g. 15)" />
                             </div>
+
+                            <div id="nthWeekdayInput_add" style="display:none;">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <select asp-for="NewPlan.WeekNumber" class="form-select">
+                                            <option value="">Week</option>
+                                            <option value="1">1st</option>
+                                            <option value="2">2nd</option>
+                                            <option value="3">3rd</option>
+                                            <option value="4">4th</option>
+                                            <option value="5">5th</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <select asp-for="NewPlan.DayOfWeekNumber" class="form-select">
+                                            <option value="">Day</option>
+                                            <option value="0">Sunday</option>
+                                            <option value="1">Monday</option>
+                                            <option value="2">Tuesday</option>
+                                            <option value="3">Wednesday</option>
+                                            <option value="4">Thursday</option>
+                                            <option value="5">Friday</option>
+                                            <option value="6">Saturday</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div id="oneTimeInput_add" style="display:none;">
                                 <input asp-for="NewPlan.TargetDate" type="date" class="form-control" />
                             </div>
@@ -302,34 +332,73 @@
                                         <td class="ps-4 fw-bold">@item.Title</td>
                                         <td>₱@item.Amount.ToString("N0")</td>
                                         <td>
-                                            @if (item.IsMonthly)
-                                            {
-                                                <span class="badge bg-primary text-white">Monthly</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-secondary text-white">One-Time</span>
-                                            }
-                                        </td>
-                                        <td class="small text-muted">
-                                            @if (item.IsMonthly)
-                                            {
-                                                <span>Day @item.DueDay</span>
-                                            }
-                                            else
-                                            {
-                                                <span>@item.TargetDate?.ToString("MMM dd, yyyy")</span>
-                                            }
-                                        </td>
+    @if (item.RecurrenceType == "FixedDay")
+    {
+        <span class="badge bg-primary text-white">Monthly Fixed</span>
+    }
+    else if (item.RecurrenceType == "NthWeekday")
+    {
+        <span class="badge bg-info text-dark">Nth Weekday</span>
+    }
+    else
+    {
+        <span class="badge bg-secondary text-white">One-Time</span>
+    }
+</td>
+<td class="small text-muted">
+    @if (item.RecurrenceType == "FixedDay")
+    {
+        <span>Day @item.DueDay</span>
+    }
+    else if (item.RecurrenceType == "NthWeekday")
+    {
+        string weekLabel = item.WeekNumber switch
+        {
+            1 => "1st",
+            2 => "2nd",
+            3 => "3rd",
+            4 => "4th",
+            5 => "5th",
+            _ => ""
+        };
+
+        string dayLabel = item.DayOfWeekNumber switch
+        {
+            0 => "Sunday",
+            1 => "Monday",
+            2 => "Tuesday",
+            3 => "Wednesday",
+            4 => "Thursday",
+            5 => "Friday",
+            6 => "Saturday",
+            _ => ""
+        };
+
+        <span>@weekLabel @dayLabel</span>
+    }
+    else
+    {
+        <span>@item.TargetDate?.ToString("MMM dd, yyyy")</span>
+    }
+</td>
                                         <td class="text-end pe-4">
                                             <button class="btn btn-sm btn-light text-primary border me-1"
-                                                    onclick="openEditModal(@item.Id, '@item.Title', @item.Amount, '@item.IsMonthly.ToString().ToLower()', '@item.DueDay', '@(item.TargetDate?.ToString("yyyy-MM-dd"))')">
+                                                    onclick='openEditModal(
+                                                    @item.Id,
+                                                    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(item.Title)),
+                                                    @item.Amount,
+                                                    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(item.RecurrenceType)),
+                                                    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(item.DueDay)),
+                                                    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(item.TargetDate?.ToString("yyyy-MM-dd"))),
+                                                    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(item.WeekNumber)),
+                                                    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(item.DayOfWeekNumber))
+                                                )'>
                                                 <i class="bi bi-pencil-fill"></i>
                                             </button>
 
                                             <button class="btn btn-sm btn-light text-danger border"
                                                         title="Cancel"
-                                                        onclick="openDeleteModal(@item.Id, '@item.Title')">
+                                                    onclick="openDeleteModal(@item.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(item.Title)))">
                                                     <i class="bi bi-trash-fill"></i>
                                                 </button>
 
@@ -365,14 +434,43 @@
                         </div>
                         <div class="mb-3">
                             <label class="small fw-bold text-muted">Type</label>
-                            <select id="editType" class="form-select mb-2" onchange="togglePlanInputs('edit')" asp-for="EditPlan.IsMonthly">
-                                <option value="true">Monthly (Fixed)</option>
-                                <option value="false">One-Time (Seasonal)</option>
+                            <select id="editType" class="form-select mb-2" onchange="togglePlanInputs('edit')" asp-for="EditPlan.RecurrenceType">
+                                <option value="FixedDay">Fixed day every month</option>
+                                <option value="NthWeekday">Nth weekday every month</option>
+                                <option value="OneTime">One-time</option>
                             </select>
 
-                            <div id="monthlyInput_edit">
+                            <div id="fixedDayInput_edit">
                                 <input id="editDay" asp-for="EditPlan.DueDay" type="number" min="1" max="31" class="form-control" placeholder="Day of Month" />
                             </div>
+
+                            <div id="nthWeekdayInput_edit" style="display:none;">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <select id="editWeekNumber" asp-for="EditPlan.WeekNumber" class="form-select">
+                                            <option value="">Week</option>
+                                            <option value="1">1st</option>
+                                            <option value="2">2nd</option>
+                                            <option value="3">3rd</option>
+                                            <option value="4">4th</option>
+                                            <option value="5">5th</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <select id="editDayOfWeekNumber" asp-for="EditPlan.DayOfWeekNumber" class="form-select">
+                                            <option value="">Day</option>
+                                            <option value="0">Sunday</option>
+                                            <option value="1">Monday</option>
+                                            <option value="2">Tuesday</option>
+                                            <option value="3">Wednesday</option>
+                                            <option value="4">Thursday</option>
+                                            <option value="5">Friday</option>
+                                            <option value="6">Saturday</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div id="oneTimeInput_edit" style="display:none;">
                                 <input id="editDate" asp-for="EditPlan.TargetDate" type="date" class="form-control" />
                             </div>
@@ -410,7 +508,7 @@
                     <form method="post" asp-page-handler="DeletePlan">
                         <input type="hidden" name="id" id="deletePlanId" />
                         <button type="submit" class="btn btn-danger fw-bold">
-                            <p class="fw-bold text-dark mb-0" id="deletePlanTitle"></p>
+                            Delete Request
                         </button>
                     </form>
                 </div>
@@ -451,50 +549,56 @@
     </script>
 
     <script>
-        function openDeleteModal(id, title) {
-        document.getElementById('deletePlanId').value = id;
-        document.getElementById('deletePlanTitle').innerText = title;
+            function openDeleteModal(id, title) {
+            document.getElementById('deletePlanId').value = id ?? '';
+            document.getElementById('deleteRequestTitle').innerText = title ?? '';
 
-        new bootstrap.Modal(
-            document.getElementById('deletePlanModal')
-        ).show();
+            new bootstrap.Modal(
+                document.getElementById('deletePlanModal')
+            ).show();
         }
     </script>
 
     <script>
-        // Shared Toggle Function
         function togglePlanInputs(mode) {
             var typeSelect = document.getElementById(mode === 'add' ? "planType" : "editType");
-            var isMonthly = typeSelect.value === "true";
+            var selectedType = typeSelect.value;
 
-            document.getElementById("monthlyInput_" + mode).style.display = isMonthly ? "block" : "none";
-            document.getElementById("oneTimeInput_" + mode).style.display = isMonthly ? "none" : "block";
+            document.getElementById("fixedDayInput_" + mode).style.display =
+                selectedType === "FixedDay" ? "block" : "none";
+
+            document.getElementById("nthWeekdayInput_" + mode).style.display =
+                selectedType === "NthWeekday" ? "block" : "none";
+
+            document.getElementById("oneTimeInput_" + mode).style.display =
+                selectedType === "OneTime" ? "block" : "none";
         }
 
-        // Open Edit Modal & Fill Data
-        function openEditModal(id, title, amount, isMonthly, day, date) {
-            // 1. Close List Modal
+            function openEditModal(id, title, amount, recurrenceType, day, date, weekNumber, dayOfWeekNumber) {
             var manageModalEl = document.getElementById('managePlansModal');
             var manageModal = bootstrap.Modal.getInstance(manageModalEl);
-            manageModal.hide();
+            if (manageModal) {
+                manageModal.hide();
+            }
 
-            // 2. Fill Fields
-            document.getElementById('editId').value = id;
-            document.getElementById('editTitle').value = title;
-            document.getElementById('editAmount').value = amount;
+            document.getElementById('editId').value = id ?? '';
+            document.getElementById('editTitle').value = title ?? '';
+            document.getElementById('editAmount').value = amount ?? '';
+            document.getElementById('editType').value = recurrenceType ?? 'FixedDay';
+            document.getElementById('editDay').value = day ?? '';
+            document.getElementById('editDate').value = date ?? '';
+            document.getElementById('editWeekNumber').value = weekNumber ?? '';
+            document.getElementById('editDayOfWeekNumber').value = dayOfWeekNumber ?? '';
 
-            var typeSelect = document.getElementById('editType');
-            typeSelect.value = isMonthly;
-
-            document.getElementById('editDay').value = day;
-            document.getElementById('editDate').value = date;
-
-            // 3. Set Correct Visibility
             togglePlanInputs('edit');
 
-            // 4. Open Edit Modal
             var editModal = new bootstrap.Modal(document.getElementById('editPlanModal'));
             editModal.show();
         }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            togglePlanInputs('add');
+            togglePlanInputs('edit');
+        });
     </script>
 }

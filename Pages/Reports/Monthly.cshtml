@@ -167,18 +167,23 @@
                                         <td class="ps-md-4 ps-2 text-secondary">
                                             @if (income.SourceName == "Sunday Envelopes")
                                             {
-                                                <strong>@income.SourceName</strong>
+                                                <div>
+                                                    <strong>@income.SourceName</strong>
+                                                    <div class="small text-muted fst-italic mt-1">
+                                                        Includes Tithes and Offering only. Solomon is recorded separately.
+                                                    </div>
+                                                </div>
                                             }
                                             else
                                             {
                                                 @income.SourceName
+                                                <span class="text-muted small fst-italic ms-1 d-block d-md-inline">
+                                                    @if (!string.IsNullOrEmpty(income.NoteDetail))
+                                                    {
+                                                        @($"({income.NoteDetail})")
+                                                    }
+                                                </span>
                                             }
-                                            <span class="text-muted small fst-italic ms-1 d-block d-md-inline">
-                                                @if (!string.IsNullOrEmpty(income.NoteDetail) && income.SourceName != "Sunday Envelopes")
-                                                {
-                                                    @($"({income.NoteDetail})")
-                                                }
-                                            </span>
                                         </td>
                                         <td></td>
                                         <td class="text-end fw-bold text-dark">@income.Amount.ToString("N2")</td>

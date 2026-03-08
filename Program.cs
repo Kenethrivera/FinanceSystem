@@ -21,14 +21,21 @@ namespace FinanceSystem
             });
             // Tells ASP.NET Core: “Here’s a service to share across the app, create it only once.”
             builder.Services.AddSingleton<SupabaseService>();
+            builder.Services.AddScoped<MonthLockService>();
 
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>
                 {
                     options.LoginPath = "/Login";
-                    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+                    options.ExpireTimeSpan = TimeSpan.FromDays(30);
+                    options.SlidingExpiration = true;
+
+                    // Optional cookie settings
+                    options.Cookie.Name = "FinanceSystemAuth";
+                    options.Cookie.HttpOnly = true;
+                    options.Cookie.SameSite = SameSiteMode.Lax;
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                 });
-            builder.Services.AddScoped<MonthLockService>();
 
             var app = builder.Build();
             // Creates a scope to safely resolve the service before the app starts.

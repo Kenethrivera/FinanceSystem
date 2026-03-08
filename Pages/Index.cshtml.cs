@@ -116,14 +116,28 @@ namespace FinanceSystem.Pages
                 bool isDue = false;
                 DateTime dueDate = DateTime.Now;
 
-                if (plan.IsMonthly)
+                if (plan.RecurrenceType == "FixedDay")
                 {
                     isDue = true;
                     dueDate = new DateTime(currentYear, currentMonth, plan.DueDay ?? 1);
                 }
-                else if (plan.TargetDate.HasValue &&
-                         plan.TargetDate.Value.Month == currentMonth &&
-                         plan.TargetDate.Value.Year == currentYear)
+                else if (plan.RecurrenceType == "NthWeekday")
+                {
+                    if (plan.WeekNumber.HasValue && plan.DayOfWeekNumber.HasValue)
+                    {
+                        dueDate = GetNthWeekdayOfMonth(
+                            currentYear,
+                            currentMonth,
+                            plan.WeekNumber.Value,
+                            (DayOfWeek)plan.DayOfWeekNumber.Value
+                        );
+                        isDue = true;
+                    }
+                }
+                else if (plan.RecurrenceType == "OneTime"
+                         && plan.TargetDate.HasValue
+                         && plan.TargetDate.Value.Month == currentMonth
+                         && plan.TargetDate.Value.Year == currentYear)
                 {
                     isDue = true;
                     dueDate = plan.TargetDate.Value;
@@ -131,15 +145,32 @@ namespace FinanceSystem.Pages
 
                 if (!isDue) continue;
 
+                var dueMonthDayIds = days
+                    .Where(d => d.Activity_Date.Month == dueDate.Month && d.Activity_Date.Year == dueDate.Year)
+                    .Select(d => d.Id)
+                    .ToList();
+
                 var matchingExpenses = expenses.Where(e =>
                 {
                     var catName = categoryLookup.ContainsKey(e.Category_Id)
                         ? categoryLookup[e.Category_Id]
                         : "";
 
-                    return
-                        (e.Notes ?? "").Contains(plan.Title, StringComparison.OrdinalIgnoreCase)
-                        || catName.Equals(plan.Title, StringComparison.OrdinalIgnoreCase);
+                    var relatedDay = days.FirstOrDefault(d => d.Id == e.Financial_Day_Id);
+                    var dayNote = relatedDay?.Notes ?? "";
+                    var expenseNote = e.Notes ?? "";
+
+                    bool sameMonth = dueMonthDayIds.Contains(e.Financial_Day_Id);
+
+                    bool titleMatch =
+                        expenseNote.Contains(plan.Title, StringComparison.OrdinalIgnoreCase)
+                        || dayNote.Contains(plan.Title, StringComparison.OrdinalIgnoreCase)
+                        || catName.Contains(plan.Title, StringComparison.OrdinalIgnoreCase)
+                        || plan.Title.Contains(expenseNote, StringComparison.OrdinalIgnoreCase)
+                        || plan.Title.Contains(dayNote, StringComparison.OrdinalIgnoreCase)
+                        || plan.Title.Contains(catName, StringComparison.OrdinalIgnoreCase);
+
+                    return sameMonth && titleMatch;
                 });
 
                 decimal amountPaid = matchingExpenses.Sum(x => x.Amount);
@@ -155,7 +186,7 @@ namespace FinanceSystem.Pages
                         Title = plan.Title,
                         Amount = plan.Amount,
                         DueDate = dueDate,
-                        IsRecurring = plan.IsMonthly
+                        IsRecurring = plan.RecurrenceType == "FixedDay" || plan.RecurrenceType == "NthWeekday"
                     });
                 }
             }
@@ -273,11 +304,23 @@ namespace FinanceSystem.Pages
         {
             await _supabase.InitializeAsync(true);
 
-            if (NewPlan.IsMonthly)
+            if (NewPlan.RecurrenceType == "FixedDay")
+            {
                 NewPlan.TargetDate = null;
-            else
+                NewPlan.WeekNumber = null;
+                NewPlan.DayOfWeekNumber = null;
+            }
+            else if (NewPlan.RecurrenceType == "NthWeekday")
+            {
+                NewPlan.TargetDate = null;
+                NewPlan.DueDay = null;
+            }
+            else if (NewPlan.RecurrenceType == "OneTime")
             {
                 NewPlan.DueDay = null;
+                NewPlan.WeekNumber = null;
+                NewPlan.DayOfWeekNumber = null;
+
                 if (NewPlan.TargetDate.HasValue)
                     NewPlan.TargetDate = NewPlan.TargetDate.Value.Date.AddHours(12);
             }
@@ -286,15 +329,42 @@ namespace FinanceSystem.Pages
             return RedirectToPage();
         }
 
+        private DateTime GetNthWeekdayOfMonth(int year, int month, int weekNumber, DayOfWeek targetDay)
+        {
+            var firstDay = new DateTime(year, month, 1);
+
+            int offset = ((int)targetDay - (int)firstDay.DayOfWeek + 7) % 7;
+            var firstTargetDay = firstDay.AddDays(offset);
+
+            var result = firstTargetDay.AddDays((weekNumber - 1) * 7);
+
+            if (result.Month != month)
+                throw new InvalidOperationException("Invalid week number for this month.");
+
+            return result;
+        }
+
         public async Task<IActionResult> OnPostUpdatePlanAsync()
         {
             await _supabase.InitializeAsync(true);
 
-            if (EditPlan.IsMonthly)
+            if (EditPlan.RecurrenceType == "FixedDay")
+            {
                 EditPlan.TargetDate = null;
-            else
+                EditPlan.WeekNumber = null;
+                EditPlan.DayOfWeekNumber = null;
+            }
+            else if (EditPlan.RecurrenceType == "NthWeekday")
+            {
+                EditPlan.TargetDate = null;
+                EditPlan.DueDay = null;
+            }
+            else if (EditPlan.RecurrenceType == "OneTime")
             {
                 EditPlan.DueDay = null;
+                EditPlan.WeekNumber = null;
+                EditPlan.DayOfWeekNumber = null;
+
                 if (EditPlan.TargetDate.HasValue)
                     EditPlan.TargetDate = EditPlan.TargetDate.Value.Date.AddHours(12);
             }

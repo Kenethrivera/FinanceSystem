@@ -23,5 +23,14 @@ namespace FinanceSystem.Models
 
         [Column("target_date")]
         public DateTime? TargetDate { get; set; }
+
+        [Column("recurrence_type")]
+        public string? RecurrenceType { get; set; }
+
+        [Column("week_number")]
+        public int? WeekNumber { get; set; }
+
+        [Column("day_of_week_number")]
+        public int? DayOfWeekNumber { get; set; }
     }
 }
