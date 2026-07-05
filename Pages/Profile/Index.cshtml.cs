@@ -48,6 +48,7 @@ namespace FinanceSystem.Pages.Profile
             if (User.IsInRole("Admin")) Role = "Admin";
             else if (User.IsInRole("Auditor")) Role = "Auditor";
             else if (User.IsInRole("Pastor")) Role = "Senior Pastor";
+            else if (User.IsInRole("Leader")) Role = "Leaders/Heads";
             else Role = "User";
 
             // Fetch real data from DB

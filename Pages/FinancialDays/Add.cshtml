@@ -115,8 +115,18 @@
 
                 <div class="card border-0 shadow-sm mb-5 overflow-hidden">
                     <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="fw-bold mb-0"><i class="bi bi-people-fill me-2"></i>Member Envelopes</h6>
-                        <span class="badge bg-white text-primary fw-bold fs-6" id="envelopeTotalBadge">Total: ₱0</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <h6 class="fw-bold mb-0">
+                                <i class="bi bi-people-fill me-2"></i>Member Envelopes
+                            </h6>
+                            <a asp-page="/SmartScan/Index" class="btn btn-light btn-sm fw-bold">
+                                <i class="bi bi-camera me-1"></i> Smart Scan
+                            </a>
+                        </div>
+
+                        <span class="badge bg-white text-primary fw-bold fs-6" id="envelopeTotalBadge">
+                            Total: ₱0
+                        </span>
                     </div>
 
                     <div class="card-body p-0">
@@ -162,7 +172,7 @@
                         </div>
 
                         <div class="p-3 bg-light border-top text-center">
-                            <button type="button" class="btn btn-outline-primary btn-sm fw-bold rounded-pill px-4" onclick="showNextRow()">
+                            <button type="button" id="addEnvelopeRowBtn" class="btn btn-outline-primary btn-sm fw-bold rounded-pill px-4" onclick="showNextRow()">
                                 <i class="bi bi-plus-lg me-1"></i> Add New Row
                             </button>
                         </div>
@@ -238,6 +248,13 @@
             </div>
         </div>
     </form>
+
+    @if (!string.IsNullOrWhiteSpace(Model.PendingEnvelopeScanJson))
+    {
+        <script id="pending-envelope-scan" type="application/json">
+            @Html.Raw(Model.PendingEnvelopeScanJson)
+        </script>
+    }
 </div>
 
 <script>
@@ -335,4 +352,65 @@
             }
         }
     }
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const scriptTag = document.getElementById("pending-envelope-scan");
+        if (!scriptTag) return;
+
+        let data;
+        try {
+            data = JSON.parse(scriptTag.textContent);
+        } catch {
+            return;
+        }
+
+        if (!data) return;
+
+        // Find the first empty visible row first
+        let targetRow = null;
+        const rows = document.querySelectorAll("#envelopeTable tbody .envelope-row");
+
+        for (const row of rows) {
+            const nameInput = row.querySelector("input[name*='Member_Name']");
+            const isHidden = row.style.display === "none";
+
+            if (!isHidden && nameInput && !nameInput.value.trim()) {
+                targetRow = row;
+                break;
+            }
+        }
+
+        // If no empty visible row, show next hidden row
+        if (!targetRow) {
+            showNextRow();
+
+            const updatedRows = document.querySelectorAll("#envelopeTable tbody .envelope-row");
+            for (const row of updatedRows) {
+                const nameInput = row.querySelector("input[name*='Member_Name']");
+                const isHidden = row.style.display === "none";
+
+                if (!isHidden && nameInput && !nameInput.value.trim()) {
+                    targetRow = row;
+                    break;
+                }
+            }
+        }
+
+        if (!targetRow) return;
+
+        const nameInput = targetRow.querySelector("input[name*='Member_Name']");
+        const tithesInput = targetRow.querySelector("input[name*='Tithes_Amount']");
+        const offeringInput = targetRow.querySelector("input[name*='Offering_Amount']");
+        const solomonInput = targetRow.querySelector("input[name*='Solomon_Amount']");
+
+        if (nameInput) nameInput.value = data.name ?? "";
+        if (tithesInput) tithesInput.value = data.tithes ?? 0;
+        if (offeringInput) offeringInput.value = data.offering ?? 0;
+        if (solomonInput) solomonInput.value = data.solomon ?? 0;
+
+        if (tithesInput) updateRowTotal(tithesInput);
+        else updateCalculations();
+    });
 </script>

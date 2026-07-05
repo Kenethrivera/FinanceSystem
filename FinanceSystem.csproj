@@ -12,6 +12,7 @@
     <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="Npgsql" Version="10.0.1" />
     <PackageReference Include="Supabase" Version="1.1.1" />
+    <PackageReference Include="Tesseract" Version="5.2.0" />
   </ItemGroup>
 
 </Project>

@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using FinanceSystem.Models;
 using FinanceSystem.ViewModels;
 using FinanceSystem.Services;
+using System.Text.Json;
+
 
 namespace FinanceSystem.Pages.FinancialDays
 {
@@ -21,6 +23,8 @@ namespace FinanceSystem.Pages.FinancialDays
 
         public SelectList CategoryOptions { get; set; }
         public SelectList SourceOptions { get; set; }
+
+        public string PendingEnvelopeScanJson { get; set; } = "";
 
         public async Task OnGetAsync()
         {
@@ -55,6 +59,15 @@ namespace FinanceSystem.Pages.FinancialDays
             for (int i = 0; i < 5; i++) Input.ExpensesList.Add(new Expenses());
 
             Input.Day.Activity_Date = DateTime.Today;
+
+            var pending = HttpContext.Session.GetString("PendingEnvelopeScan");
+            if (!string.IsNullOrWhiteSpace(pending))
+            {
+                PendingEnvelopeScanJson = pending;
+                HttpContext.Session.Remove("PendingEnvelopeScan");
+            }
+
+            await Task.CompletedTask;
         }
 
         public async Task<IActionResult> OnPostAsync()
@@ -176,4 +189,16 @@ namespace FinanceSystem.Pages.FinancialDays
             return Page();
         }
     }
-}
+
+    public class EnvelopeScanPayload
+    {
+        public string Name { get; set; } = "";
+        public string DateText { get; set; } = "";
+        public decimal Tithes { get; set; }
+        public decimal Offering { get; set; }
+        public decimal Solomon { get; set; }
+    }
+
+    
+
+    }

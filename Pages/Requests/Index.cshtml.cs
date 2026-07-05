@@ -19,7 +19,7 @@ namespace FinanceSystem.Pages.Requests
 
         public async Task<IActionResult> OnGetAsync()
         {
-            if (!User.IsInRole("Pastor")) return RedirectToPage("/Index");
+            if (!User.IsInRole("Pastor") && !User.IsInRole("Leader")) return RedirectToPage("/Index");
 
             await _supabase.InitializeAsync(true);
             string myName = User.FindFirst("FullName")?.Value;
@@ -38,17 +38,25 @@ namespace FinanceSystem.Pages.Requests
         {
             await _supabase.InitializeAsync(true);
 
-            RequestInput.RequestorName = User.FindFirst("FullName")?.Value ?? "Pastor";
+            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            var allowedRoles = new[] { "Pastor", "Leader" };
+
+            if (!allowedRoles.Contains(role))
+            {
+                return Forbid();
+            }
+
+            RequestInput.RequestorName = User.FindFirst("FullName")?.Value ?? "Unknown";
             RequestInput.Status = "Pending";
             RequestInput.CreatedAt = DateTime.Now;
 
-            // DATE FIX: Add 12 hours buffer to prevent timezone rollback
             if (RequestInput.DateNeeded.HasValue)
             {
                 RequestInput.DateNeeded = RequestInput.DateNeeded.Value.Date.AddHours(12);
             }
 
             await _supabase.Client.From<FinancialRequest>().Insert(RequestInput);
+
             return RedirectToPage("/Requests/Index");
         }
 

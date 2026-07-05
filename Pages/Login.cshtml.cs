@@ -6,16 +6,19 @@ using System.Security.Claims;
 using FinanceSystem.Services;
 using FinanceSystem.Models;
 
+
 namespace FinanceSystem.Pages
 {
     public class LoginModel : PageModel
     {
 
         private readonly SupabaseService _supabase;
+        private readonly ILogger<LoginModel> _logger;
 
-        public LoginModel(SupabaseService supabase)
+        public LoginModel(SupabaseService supabase, ILogger<LoginModel> logger)
         {
             _supabase = supabase;
+            _logger = logger;
         }
 
         [BindProperty]
@@ -102,6 +105,13 @@ namespace FinanceSystem.Pages
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 principal,
                 authProperties);
+
+            _logger.LogInformation(
+                "LOGIN SUCCESS: {user} IP:{ip} Device:{device}",
+                user.Username,
+                HttpContext.Connection.RemoteIpAddress,
+                Request.Headers["User-Agent"].ToString()
+            );
 
             return RedirectToPage("/Index");
         }

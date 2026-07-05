@@ -23,6 +23,18 @@ namespace FinanceSystem
             builder.Services.AddSingleton<SupabaseService>();
             builder.Services.AddScoped<MonthLockService>();
 
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddDistributedMemoryCache();
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(30);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            }
+            );
+
+            builder.Services.AddScoped<IEnvelopeOcrService, EnvelopeOcrService>();
+
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>
                 {
@@ -37,8 +49,25 @@ namespace FinanceSystem
                     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                 });
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("RestrictedCors", policy =>
+                {
+                    policy.WithOrigins("https://pfc-olivarez-finance-f3c9exg0fff3ahbx.japaneast-01.azurewebsites.net")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
+            });
+
             var app = builder.Build();
-            // Creates a scope to safely resolve the service before the app starts.
+
+            // Configure the HTTP request pipeline.
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseExceptionHandler("/Error");
+                app.UseHsts();
+            }
+
             using (var scope = app.Services.CreateScope())
             {
                 // Calls our initialize method to connect to Supabase before any page loads.
@@ -58,13 +87,18 @@ namespace FinanceSystem
 
             app.Use(async (context, next) =>
             {
-                context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
-                context.Response.Headers.Append("Pragma", "no-cache");
-                context.Response.Headers.Append("Expires", "0");
+                context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+                context.Response.Headers["Pragma"] = "no-cache";
+                context.Response.Headers["Expires"] = "0";
+                context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+                context.Response.Headers["X-Frame-Options"] = "DENY";
+                context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
                 await next();
             });
 
             app.UseRouting();
+            app.UseCors("RestrictedCors");
+            app.UseSession();
 
             app.UseAuthentication();
             app.UseAuthorization();
